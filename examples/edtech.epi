@@ -1,0 +1,93 @@
+@Language: Epi v0.2
+@Goal: "Adaptive Learning Platform with AI Assessment"
+
+// ============================================================
+// Domain: EdTech — Adaptive Learning
+// Demonstrates Epi's generality beyond the legal-tech example
+// ============================================================
+
+Entity Student {
+    id: UUID(auto),
+    name: Text,
+    email: Text,
+    enrolled_at: DateTime(auto),
+    learning_profile: AI.Text(max_tokens: 200)
+}
+
+Entity Assignment {
+    id: UUID(auto),
+    title: Text,
+    subject: Text,
+    due_date: DateTime,
+    max_score: Int,
+    difficulty: AI.Score(min: 0, max: 1)
+}
+
+Entity Submission {
+    id: UUID(auto),
+    content: Text,
+    submitted_at: DateTime(auto),
+    grade: AI.Score(min: 0, max: 100),
+    feedback: AI.Text(max_tokens: 500),
+    plagiarism_risk: AI.Enum(None, Low, Medium, High, strict: true)
+}
+
+Guard OnlyTeachers {
+    Condition: Auth.Role == "Teacher"
+}
+
+Guard OnlyStudents {
+    Condition: Auth.Role == "Student"
+}
+
+Pulse GradeSubmission {
+    Input: Submission
+    Protect: Guard.OnlyTeachers
+    Process:
+        Execute: AI.scan(
+            source: Input.content,
+            prompt: file("@prompts/grade_rubric.md"),
+            temperature: 0.2,
+            on_fail: Fallback.ManualReview(Queue: "Teachers")
+        )
+    Output: Submission.grade
+}
+
+Pulse GenerateFeedback {
+    Input: Submission
+    Protect: Guard.OnlyTeachers
+    Process:
+        Execute: AI.generate(
+            source: Input.content,
+            prompt: file("@prompts/feedback_template.md"),
+            temperature: 0.4,
+            max_tokens: 500,
+            on_fail: Fallback.ReturnDefault(value: "Feedback pending manual review.")
+        )
+    Output: Submission.feedback
+}
+
+Pulse DetectPlagiarism {
+    Input: Submission
+    Process:
+        Execute: AI.classify(
+            source: Input.content,
+            prompt: file("@prompts/plagiarism_check.md"),
+            temperature: 0.1,
+            on_fail: Fallback.ReturnDefault(value: "None")
+        )
+    Output: Submission.plagiarism_risk
+}
+
+Pipeline EvaluateSubmission {
+    Flow: DetectPlagiarism -> GradeSubmission -> GenerateFeedback
+    On_Error: Retry(max: 2, backoff: exponential)
+}
+
+Lens TeacherDashboard {
+    Mood: "Clean, Academic, Accessible"
+    Display:
+        Table(Submission, columns: [title, grade, plagiarism_risk, submitted_at]),
+        Form(Submission) -> Button("Evaluate").trigger(GradeSubmission),
+        Button("Generate Feedback").trigger(GenerateFeedback)
+}

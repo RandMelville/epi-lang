@@ -119,6 +119,7 @@ def transpile(
     from epi.generators.deterministic.prisma import generate_prisma
     from epi.generators.deterministic.middleware import generate_middleware
     from epi.generators.deterministic.routes import generate_routes
+    from epi.generators.deterministic.validators import generate_validators
     from epi.generators.epistemic.ai_scan import generate_pulse_stub
     from epi.generators.epistemic.lens_mood import generate_lens_stub
 
@@ -140,6 +141,10 @@ def transpile(
 
     route_files = generate_routes(program, target)
     files_to_write.update(route_files)
+
+    # Validators (epistemic boundary enforcement)
+    validator_files = generate_validators(program)
+    files_to_write.update(validator_files)
 
     # Epistemic layer (stubs)
     for pulse in program.pulses:
