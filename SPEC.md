@@ -328,4 +328,4 @@ Lens Dashboard {
 
 ## 8. License
 
-MIT License — Copyright (c) 2026 Randerson Rebouças
+Apache License 2.0 — Copyright (c) 2026 Randerson Rebouças

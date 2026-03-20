@@ -1,11 +1,23 @@
-# Epi — Epistemic Programming Interface
+<p align="center">
+  <strong>Epi</strong> — Epistemic Programming Interface
+</p>
 
-**A Zero-Stack Intent-Oriented Language with an Epistemic Type System.**
+<p align="center">
+  <em>A Zero-Stack Intent-Oriented Language with an Epistemic Type System</em>
+</p>
 
-> *Research Status: Active / Structural Validation (v0.2)*
-> *Author: Randerson Rebouças — UFRGS (PhD, Computing in Education)*
+<p align="center">
+  <a href="https://github.com/RandMelville/epi-lang/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
+  <img src="https://img.shields.io/badge/version-0.2.0-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
+  <img src="https://img.shields.io/badge/status-research%20%2F%20active-green.svg" alt="Status">
+</p>
 
 ---
+
+> **Research Status: Active / Structural Validation (v0.2)**
+>
+> Author: [Randerson Rebouças](https://github.com/RandMelville) — PhD Candidate, UFRGS
 
 ## The Problem
 
@@ -21,9 +33,7 @@ Modern full-stack development is a stack of accidental complexity. To build a si
 
 Seven layers. Three to five languages. Dozens of files. **And the actual business logic — "store a contract and classify its risk" — fits in a single sentence.**
 
-Over 60% of development time is spent on this infrastructure. Not on the idea. Not on the algorithm. On the *plumbing*.
-
-Worse: when AI enters the picture, traditional type systems cannot distinguish between a value that was *computed* (a UUID) and a value that was *hallucinated* (an AI classification). A `string` is a `string`. The database doesn't know. The compiler doesn't care. And the hallucination becomes ground truth.
+Worse: when AI enters the picture, traditional type systems cannot distinguish between a value that was *computed* (a UUID) and a value that was *hallucinated* (an AI classification). A `string` is a `string`. The database doesn't know. The compiler doesn't care. The hallucination becomes ground truth.
 
 ## The Solution
 
@@ -109,11 +119,16 @@ AI.Score(min: 0, max: 1)
 AI.Embedding(dimensions: N)
 ```
 
-The transpiler generates **both** the inference call and its validation schema from the same declaration. If it compiles, it validates.
+A single `AI.Enum(Alto, Medio, Baixo, strict: true)` declaration generates:
+1. A **database column** (`String` in Prisma)
+2. A **runtime validation schema** (Zod enum / Pydantic validator)
+3. An **LLM inference call** with temperature and fallback constraints
+
+If it compiles, it validates.
 
 ## Architecture
 
-Three-layer transpiler. The LLM is only invoked in Layer 3.
+Three-layer transpiler. The LLM is formally excluded from Layers 1 and 2.
 
 ```
 .epi source → [Layer 1: Parser] → [Layer 2: Rigid Generator] → [Layer 3: Epistemic Generator]
@@ -126,10 +141,14 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown.
 ## Quick Start
 
 ```bash
+# Clone
+git clone https://github.com/RandMelville/epi-lang.git
+cd epi-lang
+
 # Install
 pip install -e ".[dev]"
 
-# Parse and validate an .epi file
+# Validate syntax
 epi validate examples/contrato.epi
 
 # Transpile to a full project
@@ -139,14 +158,17 @@ epi transpile examples/contrato.epi --target nextjs --outdir ./generated
 ## Project Structure
 
 ```
-grammar/epi.lark          EBNF grammar
-epi/parser/ast_nodes.py   Pydantic AST models
-epi/parser/builder.py     Lark Transformer
-epi/generators/           Code generators (deterministic + epistemic)
-examples/contrato.epi     Canonical example
-SPEC.md                   Formal language specification
-ARCHITECTURE.md           Technical architecture
-MANIFESTO.md              Project philosophy
+grammar/epi.lark            EBNF grammar definition
+epi/parser/ast_nodes.py     Pydantic AST models (Epistemic Type System)
+epi/parser/builder.py       Lark Transformer (parse tree → typed AST)
+epi/generators/             Code generators
+  deterministic/            Layer 2: Prisma, middleware, routes
+  epistemic/                Layer 3: AI inference stubs, Lens UI
+epi/cli.py                  Typer CLI (parse, validate, transpile)
+examples/contrato.epi       Canonical example
+SPEC.md                     Formal language specification
+ARCHITECTURE.md             Technical architecture
+MANIFESTO.md                Project philosophy
 ```
 
 ## Documentation
@@ -156,6 +178,7 @@ MANIFESTO.md              Project philosophy
 | [SPEC.md](SPEC.md) | Formal language specification — grammar, type system, primitives |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Transpiler architecture — three layers, design decisions |
 | [MANIFESTO.md](MANIFESTO.md) | Philosophy — why epistemic types matter |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 
 ## Status
 
@@ -164,17 +187,43 @@ MANIFESTO.md              Project philosophy
 - [x] Formal specification (SPEC.md)
 - [x] EBNF grammar (Lark)
 - [x] AST node models (Pydantic)
-- [x] Lark Transformer (parser → AST)
-- [x] Deterministic generators (Prisma, middleware, routes)
-- [x] Epistemic generators (stubs)
+- [x] Lark Transformer (parser → typed AST)
+- [x] Deterministic generators (Prisma, middleware, routes with retry)
+- [x] Epistemic generators (stubs with fallback metadata)
 - [x] CLI (parse, validate, transpile)
-- [ ] End-to-end parser validation
-- [ ] Template expansion for Next.js target
+- [x] Parser end-to-end validation
 - [ ] Template expansion for FastAPI target
 - [ ] Epistemic layer integration (Claude API)
-- [ ] Lens → React component generation
+- [ ] Lens Mood → LLM-driven styling
 - [ ] Academic paper (ArXiv preprint)
+
+## Related Work
+
+| System | Relationship to Epi |
+|--------|---------------------|
+| [ProbZelus](https://dl.acm.org/doi/10.1145/3385412.3386009) (PLDI 2020) | Separates deterministic/probabilistic in reactive streams — Epi adapts this to full-stack transpilation |
+| [SlicStan](https://dl.acm.org/doi/10.1145/3290348) (POPL 2019) | Information-flow types for probabilistic programs — Epi generalizes to application-level types |
+| [BAML](https://github.com/BoundaryML/baml) | Typed LLM function signatures — Epi extends to full application generation |
+| [Wasp](https://wasp-lang.dev) | Full-stack DSL (React + Node) — Epi adds epistemic types and AI-aware transpilation |
+
+## Citation
+
+If you use Epi in academic work, please cite:
+
+```bibtex
+@software{reboucas2026epi,
+  author       = {Rebouças, Randerson},
+  title        = {Epi: An Epistemic Programming Interface for AI-Aware Full-Stack Transpilation},
+  year         = {2026},
+  url          = {https://github.com/RandMelville/epi-lang},
+  version      = {0.2.0}
+}
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT — Copyright (c) 2026 Randerson Rebouças
+[Apache License 2.0](LICENSE) — Copyright (c) 2026 Randerson Rebouças

@@ -3,7 +3,7 @@ name = "epi-lang"
 version = "0.2.0"
 description = "Epi — Epistemic Programming Interface. A zero-stack intent-oriented language with an epistemic type system that formally separates deterministic and AI-inferred computation."
 readme = "README.md"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 authors = [
     { name = "Randerson Rebouças", email = "randersonreboucas@gmail.com" },
