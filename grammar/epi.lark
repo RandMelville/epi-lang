@@ -1,0 +1,143 @@
+// ============================================================
+// Epi v0.2 — Formal Grammar (EBNF via Lark)
+// Epistemic Programming Interface
+// Author: Randerson Rebouças (UFRGS)
+// License: MIT
+// ============================================================
+
+start: metadata* declaration+
+
+// --- Metadata (@Language, @Goal) ---
+metadata: "@" METADATA_KEY ":" metadata_value
+METADATA_KEY: "Language" | "Goal"
+metadata_value: ESCAPED_STRING | metadata_text
+metadata_text: (IDENT | NUMBER | ".")+
+
+// --- Top-level declarations ---
+declaration: entity | guard | pulse | pipeline | lens
+
+// ============================================================
+// ENTITY — Schema with Epistemic Types
+// ============================================================
+entity: "Entity" IDENT "{" field ("," field)* ","? "}"
+field: IDENT ":" type_expr
+
+// --- Type System: Rigid (deterministic) vs Epistemic (AI-inferred) ---
+type_expr: rigid_type | epistemic_type
+
+// Rigid types — fully deterministic, transpile to DB columns
+rigid_type: BASE_TYPE type_modifier?
+BASE_TYPE: "UUID" | "Text" | "Int" | "Float" | "Decimal" | "Bool" | "DateTime" | "JSON"
+type_modifier: "(" modifier_args ")"
+modifier_args: modifier_arg ("," modifier_arg)*
+modifier_arg: IDENT (":" literal)?
+
+// Epistemic types — AI-inferred, validated at runtime (Zod/Pydantic)
+epistemic_type: "AI." EPISTEMIC_KIND "(" epistemic_args ")"
+EPISTEMIC_KIND: "Enum" | "Text" | "Classification" | "Embedding" | "Score"
+epistemic_args: epistemic_arg ("," epistemic_arg)*
+epistemic_arg: IDENT (":" literal)? | literal
+
+// ============================================================
+// GUARD — Authentication & State Protection
+// ============================================================
+guard: "Guard" IDENT "{" guard_body "}"
+guard_body: "Condition:" condition_expr
+
+condition_expr: condition_term (("&&" | "||") condition_term)*
+condition_term: dotted_name COMPARATOR literal
+               | dotted_name
+COMPARATOR: "==" | "!=" | ">" | "<" | ">=" | "<="
+
+// ============================================================
+// PULSE — Logic & Hallucination Control
+// ============================================================
+pulse: "Pulse" IDENT "{" pulse_body "}"
+pulse_body: pulse_input pulse_protect? pulse_process pulse_output?
+
+pulse_input: "Input:" IDENT
+pulse_protect: "Protect:" dotted_name
+pulse_process: "Process:" process_step+
+pulse_output: "Output:" type_or_ref
+
+process_step: "Execute:" ai_call
+
+// AI function calls — the epistemic execution layer
+ai_call: "AI." AI_FUNC "(" ai_call_args ")"
+AI_FUNC: "scan" | "summarize" | "classify" | "extract" | "generate" | "embed"
+ai_call_args: ai_call_arg ("," ai_call_arg)*
+ai_call_arg: IDENT ":" ai_call_value
+ai_call_value: literal
+             | dotted_name
+             | IDENT
+             | file_ref
+             | fallback_ref
+             | ai_call
+
+// file() reference for prompt injection
+file_ref: "file" "(" ESCAPED_STRING ")"
+
+// Fallback strategies — what happens when AI fails
+fallback_ref: "Fallback." FALLBACK_STRATEGY fallback_params?
+FALLBACK_STRATEGY: "ManualReview" | "ReturnEmpty" | "ReturnDefault" | "Retry" | "Escalate"
+fallback_params: "(" ai_call_args ")"
+
+// ============================================================
+// PIPELINE — Flow Composition
+// ============================================================
+pipeline: "Pipeline" IDENT "{" pipeline_body "}"
+pipeline_body: pipeline_flow pipeline_error?
+pipeline_flow: "Flow:" IDENT ("->" IDENT)+
+pipeline_error: "On_Error:" error_strategy
+error_strategy: "Retry" "(" ai_call_args ")"
+              | "Halt"
+              | "Fallback" "(" IDENT ")"
+
+// ============================================================
+// LENS — Semantic UI Design + Escape Hatch
+// ============================================================
+lens: "Lens" IDENT "{" lens_body "}"
+lens_body: lens_mood? lens_display lens_inject?
+
+lens_mood: "Mood:" ESCAPED_STRING
+lens_display: "Display:" display_item ("," display_item)*
+lens_inject: "Inject:" ESCAPED_STRING
+
+display_item: widget_call chain_action?
+
+widget_call: WIDGET_TYPE "(" widget_args ")"
+WIDGET_TYPE: "Table" | "Form" | "Card" | "List" | "Chart" | "Button" | "Input" | "Modal"
+widget_args: widget_arg ("," widget_arg)*
+widget_arg: IDENT
+           | IDENT ":" widget_arg_value
+           | ESCAPED_STRING
+widget_arg_value: literal
+                | "[" widget_arg_list "]"
+                | dotted_name
+widget_arg_list: widget_arg_list_item ("," widget_arg_list_item)*
+widget_arg_list_item: IDENT | ESCAPED_STRING
+
+// --- Trigger for buttons ---
+trigger: "." "trigger" "(" IDENT ")"
+chain_action: "->" widget_call trigger?
+            | trigger
+
+// ============================================================
+// SHARED TERMINALS & RULES
+// ============================================================
+dotted_name: IDENT ("." IDENT)+
+type_or_ref: IDENT ("." IDENT)* | BASE_TYPE
+
+literal: ESCAPED_STRING | NUMBER | BOOL | NULL
+BOOL: "true" | "false"
+NULL: "null"
+
+// Terminals
+IDENT: /[a-zA-Z_][a-zA-Z0-9_]*/
+NUMBER: /\d+(\.\d+)?/
+
+// Whitespace & Comments
+%import common.ESCAPED_STRING
+%import common.WS
+%ignore WS
+%ignore /\/\/.*/

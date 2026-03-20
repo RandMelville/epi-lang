@@ -1,0 +1,81 @@
+[project]
+name = "epi-lang"
+version = "0.2.0"
+description = "Epi — Epistemic Programming Interface. A zero-stack intent-oriented language with an epistemic type system that formally separates deterministic and AI-inferred computation."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Randerson Rebouças", email = "randersonreboucas@gmail.com" },
+]
+keywords = [
+    "language",
+    "transpiler",
+    "epistemic",
+    "type-system",
+    "ai",
+    "intent-oriented",
+    "dsl",
+    "code-generation",
+    "zero-stack",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "lark>=1.1.9",
+    "typer>=0.12.0",
+    "pydantic>=2.0.0",
+    "jinja2>=3.1.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-snapshot>=0.9.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+]
+epistemic = [
+    "anthropic>=0.40.0",
+]
+all = [
+    "epi-lang[dev,epistemic]",
+]
+
+[project.scripts]
+epi = "epi.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["epi"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "TCH"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true

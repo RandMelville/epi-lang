@@ -1,0 +1,79 @@
+@Language: Epi v0.2
+@Goal: "Análise de Contratos com Human-in-the-loop"
+
+Entity Contrato {
+    id: UUID(auto),
+    titulo: Text,
+    documento: Text,
+    valor: Decimal,
+    criado_em: DateTime(auto),
+    risco: AI.Enum(Alto, Medio, Baixo, strict: true)
+}
+
+Entity Advogado {
+    id: UUID(auto),
+    nome: Text,
+    oab: Text,
+    especialidade: AI.Text(max_tokens: 50)
+}
+
+Guard SomenteAdvogados {
+    Condition: Auth.Role == "Lawyer"
+}
+
+Guard SomenteAdmin {
+    Condition: Auth.Role == "Admin"
+}
+
+Pulse ExtrairRisco {
+    Input: Contrato
+    Protect: Guard.SomenteAdvogados
+    Process:
+        Execute: AI.scan(
+            source: Input.documento,
+            prompt: file("@prompts/legal_scan.md"),
+            temperature: 0.1,
+            on_fail: Fallback.ManualReview(Queue: "Advogados")
+        )
+    Output: Contrato.risco
+}
+
+Pulse GerarResumo {
+    Input: Contrato
+    Protect: Guard.SomenteAdvogados
+    Process:
+        Execute: AI.summarize(
+            source: Input.documento,
+            prompt: file("@prompts/resumo_contrato.md"),
+            temperature: 0.3,
+            max_tokens: 500,
+            on_fail: Fallback.ReturnEmpty
+        )
+    Output: Text
+}
+
+Pulse Notificar {
+    Input: Contrato
+    Process:
+        Execute: AI.generate(
+            source: Input.titulo,
+            prompt: file("@prompts/notify.md"),
+            temperature: 0.2,
+            on_fail: Fallback.ReturnEmpty
+        )
+    Output: Text
+}
+
+Pipeline AnalisarContrato {
+    Flow: ExtrairRisco -> GerarResumo -> Notificar
+    On_Error: Retry(max: 3, backoff: exponential)
+}
+
+Lens Dashboard {
+    Mood: "Clean, Legal-Tech, Professional"
+    Display:
+        Table(Contrato, columns: [titulo, valor, risco, criado_em]),
+        Form(Contrato) -> Button("Analisar Risco").trigger(ExtrairRisco),
+        Button("Gerar Resumo").trigger(GerarResumo)
+    Inject: "<footer class='text-gray-500 text-sm'>© 2026 LegalTech</footer>"
+}
