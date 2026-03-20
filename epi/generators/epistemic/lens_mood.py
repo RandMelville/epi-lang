@@ -47,25 +47,31 @@ def _nextjs_lens_stub(lens: Lens) -> str:
 
 def _widget_to_jsx(widget: Widget) -> str:
     wtype = widget.widget_type
-    entity = widget.args.get("entity", next(iter(widget.args), ""))
+    entity = widget.args.get("entity", "")
 
     trigger_attr = ""
     if widget.trigger:
         trigger_attr = f' onClick={{() => trigger("{widget.trigger.pulse_name}")}}'
 
+    # Handle chain: widget -> chained_widget
+    chain_jsx = ""
+    if widget.chain:
+        chain_jsx = f"\n        {_widget_to_jsx(widget.chain)}"
+
     if wtype == "Table":
         cols = widget.args.get("columns", [])
         cols_str = ", ".join(f'"{c}"' for c in cols) if isinstance(cols, list) else ""
-        return f"<{wtype}Component entity=\"{entity}\" columns={{[{cols_str}]}} />"
+        return f'<TableComponent entity="{entity}" columns={{[{cols_str}]}} />'
     elif wtype == "Form":
-        return f"<{wtype}Component entity=\"{entity}\" />"
+        if chain_jsx:
+            return f'<FormComponent entity="{entity}">{chain_jsx}\n      </FormComponent>'
+        return f'<FormComponent entity="{entity}" />'
     elif wtype == "Button":
-        label = next(
-            (v for k, v in widget.args.items() if isinstance(v, str) and k != "entity"),
-            wtype,
-        )
+        label = widget.args.get("label", "")
         return f"<button{trigger_attr}>{label}</button>"
     else:
+        if chain_jsx:
+            return f"<{wtype}Component>{chain_jsx}\n      </{wtype}Component>"
         return f"<{wtype}Component />"
 
 

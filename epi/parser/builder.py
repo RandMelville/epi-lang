@@ -72,15 +72,16 @@ class EpiTransformer(Transformer):
 
     def metadata_text(self, *parts):
         # Reconstruct version strings like "Epi v0.2"
-        # Parts come as tokens: "Epi", "v0", ".", 2
         result = []
         for p in parts:
             s = str(p)
-            # Don't add space before dots or after dots
             if result and s != "." and result[-1] != ".":
                 result.append(" ")
             result.append(s)
         return "".join(result)
+
+    def VERSION(self, token):
+        return str(token)
 
     def METADATA_KEY(self, token):
         return str(token)
@@ -352,6 +353,18 @@ class EpiTransformer(Transformer):
                 args.update(part)
             elif isinstance(part, WidgetTrigger):
                 trigger = part
+
+        # Resolve positional args based on widget type
+        positional = args.pop("_positional", [])
+        if wtype == "Button":
+            # Button("Label") — first positional is the label
+            if positional:
+                args["label"] = positional[0]
+        else:
+            # Table(Entity, ...), Form(Entity, ...) — first positional is entity
+            if positional:
+                args["entity"] = positional[0]
+
         return Widget(widget_type=wtype, args=args, trigger=trigger)
 
     def WIDGET_TYPE(self, token):

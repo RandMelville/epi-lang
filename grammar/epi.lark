@@ -11,7 +11,8 @@ start: metadata* declaration+
 metadata: "@" METADATA_KEY ":" metadata_value
 METADATA_KEY: "Language" | "Goal"
 metadata_value: ESCAPED_STRING | metadata_text
-metadata_text: (IDENT | NUMBER | ".")+
+metadata_text: (IDENT | VERSION | NUMBER | ".")+
+VERSION: /v\d+\.\d+/
 
 // --- Top-level declarations ---
 declaration: entity | guard | pulse | pipeline | lens
