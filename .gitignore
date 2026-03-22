@@ -40,6 +40,8 @@ output/
 
 # Personal documents (not part of the project)
 GUIA-PROFESSORA-ROSA.md
+REGISTRO-INPI.md
+*.pdf
 
 # Environment
 .env

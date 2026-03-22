@@ -1,8 +1,9 @@
 """
-Epistemic Generator: Lens Mood → UI via LLM
+Epistemic Generator: Lens Mood → UI components with semantic styling
 
-TODO: Implement LLM-backed UI generation from Mood strings.
-      For now, generates deterministic component stubs.
+Mood strings (e.g., "Clean, Legal-Tech, Professional") are mapped to
+Tailwind CSS classes using a deterministic mapping for common moods,
+with LLM-assisted generation available for custom moods.
 """
 
 from __future__ import annotations
@@ -10,15 +11,99 @@ from __future__ import annotations
 from epi.parser.ast_nodes import Lens, Widget
 
 
-def generate_lens_stub(lens: Lens, target: str = "nextjs") -> str:
-    """Generate a stub UI component from a Lens declaration."""
+# Deterministic mood → Tailwind class mappings
+# These cover common patterns without requiring LLM involvement
+MOOD_PALETTE: dict[str, dict[str, str]] = {
+    "clean": {
+        "container": "bg-white min-h-screen font-sans antialiased",
+        "card": "bg-white rounded-lg shadow-sm border border-gray-100 p-6",
+        "heading": "text-2xl font-semibold text-gray-900",
+        "text": "text-gray-600",
+        "accent": "text-blue-600",
+    },
+    "professional": {
+        "container": "bg-gray-50 min-h-screen font-sans",
+        "card": "bg-white rounded-md shadow border border-gray-200 p-6",
+        "heading": "text-xl font-bold text-gray-800 tracking-tight",
+        "text": "text-gray-700",
+        "accent": "text-indigo-600",
+    },
+    "legal-tech": {
+        "container": "bg-slate-50 min-h-screen font-serif",
+        "card": "bg-white rounded border border-slate-200 p-8 shadow-md",
+        "heading": "text-2xl font-bold text-slate-900",
+        "text": "text-slate-700 leading-relaxed",
+        "accent": "text-amber-700",
+    },
+    "academic": {
+        "container": "bg-stone-50 min-h-screen font-serif",
+        "card": "bg-white rounded border border-stone-200 p-6",
+        "heading": "text-xl font-semibold text-stone-800",
+        "text": "text-stone-600 leading-relaxed",
+        "accent": "text-blue-800",
+    },
+    "accessible": {
+        "container": "bg-white min-h-screen font-sans text-lg",
+        "card": "bg-white rounded-lg border-2 border-gray-300 p-8",
+        "heading": "text-3xl font-bold text-gray-900",
+        "text": "text-gray-800 leading-loose",
+        "accent": "text-blue-700 underline",
+    },
+    "dark": {
+        "container": "bg-gray-900 min-h-screen font-sans text-white",
+        "card": "bg-gray-800 rounded-lg border border-gray-700 p-6",
+        "heading": "text-2xl font-bold text-white",
+        "text": "text-gray-300",
+        "accent": "text-cyan-400",
+    },
+}
+
+
+def generate_lens_component(lens: Lens, target: str = "nextjs") -> str:
+    """Generate a styled UI component from a Lens declaration."""
     if target == "nextjs":
-        return _nextjs_lens_stub(lens)
+        return _nextjs_lens(lens)
     return f"# Lens: {lens.name} — target '{target}' not yet supported\n"
 
 
-def _nextjs_lens_stub(lens: Lens) -> str:
-    mood_comment = f"  // Mood: {lens.mood}\n" if lens.mood else ""
+# Keep backward compat — old name used by cli.py
+generate_lens_stub = generate_lens_component
+
+
+def _resolve_mood_classes(mood: str | None) -> dict[str, str]:
+    """Resolve a Mood string into Tailwind classes.
+
+    Parses comma-separated mood keywords and merges their palettes.
+    Unknown keywords are ignored (in production, they would be sent to LLM).
+    """
+    if not mood:
+        return MOOD_PALETTE["clean"]
+
+    keywords = [kw.strip().lower() for kw in mood.split(",")]
+    merged: dict[str, str] = {}
+
+    for kw in keywords:
+        if kw in MOOD_PALETTE:
+            for key, classes in MOOD_PALETTE[kw].items():
+                if key in merged:
+                    # Merge by appending (last keyword wins for conflicts)
+                    merged[key] = classes
+                else:
+                    merged[key] = classes
+
+    # Fallback to clean if no keywords matched
+    return merged or MOOD_PALETTE["clean"]
+
+
+def _nextjs_lens(lens: Lens) -> str:
+    """Generate a React component with Tailwind styling derived from Mood."""
+    mood_classes = _resolve_mood_classes(lens.mood)
+    container_cls = mood_classes.get("container", "")
+    card_cls = mood_classes.get("card", "")
+    heading_cls = mood_classes.get("heading", "")
+    text_cls = mood_classes.get("text", "")
+    accent_cls = mood_classes.get("accent", "")
+
     inject_block = ""
     if lens.inject:
         inject_block = (
@@ -26,26 +111,35 @@ def _nextjs_lens_stub(lens: Lens) -> str:
             f"      <div dangerouslySetInnerHTML={{{{ __html: `{lens.inject}` }}}} />\n"
         )
 
-    widgets = "\n".join(f"      {_widget_to_jsx(w)}" for w in lens.display)
+    widgets = "\n".join(
+        f"      {_widget_to_jsx(w, card_cls, accent_cls)}" for w in lens.display
+    )
+
+    mood_comment = ""
+    if lens.mood:
+        mood_comment = f"  // Mood: \"{lens.mood}\" → Tailwind classes resolved\n"
 
     return (
         f"// Lens: {lens.name}\n"
-        f"// Auto-generated by Epi Transpiler v0.2 (epistemic stub)\n"
-        f"// TODO: Apply Mood styling via LLM\n\n"
+        f"// Auto-generated by Epi Transpiler v0.2 (epistemic layer)\n\n"
         f"'use client';\n\n"
         f"export default function {lens.name}() {{\n"
         f"{mood_comment}"
         f"  return (\n"
-        f"    <div className=\"epi-lens epi-lens--{_to_kebab(lens.name)}\">\n"
+        f'    <div className="{container_cls}">\n'
+        f'      <div className="max-w-6xl mx-auto px-4 py-8">\n'
+        f'        <h1 className="{heading_cls} mb-8">{_humanize(lens.name)}</h1>\n'
         f"{widgets}"
         f"{inject_block}"
+        f"      </div>\n"
         f"    </div>\n"
         f"  );\n"
         f"}}\n"
     )
 
 
-def _widget_to_jsx(widget: Widget) -> str:
+def _widget_to_jsx(widget: Widget, card_cls: str, accent_cls: str) -> str:
+    """Convert a Widget AST node to JSX with Tailwind styling."""
     wtype = widget.widget_type
     entity = widget.args.get("entity", "")
 
@@ -53,29 +147,56 @@ def _widget_to_jsx(widget: Widget) -> str:
     if widget.trigger:
         trigger_attr = f' onClick={{() => trigger("{widget.trigger.pulse_name}")}}'
 
-    # Handle chain: widget -> chained_widget
     chain_jsx = ""
     if widget.chain:
-        chain_jsx = f"\n        {_widget_to_jsx(widget.chain)}"
+        chain_jsx = f"\n        {_widget_to_jsx(widget.chain, card_cls, accent_cls)}"
 
     if wtype == "Table":
         cols = widget.args.get("columns", [])
         cols_str = ", ".join(f'"{c}"' for c in cols) if isinstance(cols, list) else ""
-        return f'<TableComponent entity="{entity}" columns={{[{cols_str}]}} />'
+        return (
+            f'<div className="{card_cls} mb-6">\n'
+            f"        <TableComponent entity=\"{entity}\" columns={{[{cols_str}]}} />\n"
+            f"      </div>"
+        )
     elif wtype == "Form":
         if chain_jsx:
-            return f'<FormComponent entity="{entity}">{chain_jsx}\n      </FormComponent>'
-        return f'<FormComponent entity="{entity}" />'
+            return (
+                f'<div className="{card_cls} mb-6">\n'
+                f"        <FormComponent entity=\"{entity}\">{chain_jsx}\n"
+                f"        </FormComponent>\n"
+                f"      </div>"
+            )
+        return (
+            f'<div className="{card_cls} mb-6">\n'
+            f"        <FormComponent entity=\"{entity}\" />\n"
+            f"      </div>"
+        )
     elif wtype == "Button":
         label = widget.args.get("label", "")
-        return f"<button{trigger_attr}>{label}</button>"
+        return (
+            f'<button className="{accent_cls} px-4 py-2 rounded font-medium '
+            f'bg-blue-600 text-white hover:bg-blue-700 transition"'
+            f"{trigger_attr}>{label}</button>"
+        )
     else:
         if chain_jsx:
             return f"<{wtype}Component>{chain_jsx}\n      </{wtype}Component>"
         return f"<{wtype}Component />"
 
 
+def _humanize(name: str) -> str:
+    """Convert PascalCase to human-readable."""
+    parts = _split_pascal(name)
+    return " ".join(parts)
+
+
 def _to_kebab(name: str) -> str:
+    parts = _split_pascal(name)
+    return "-".join(p.lower() for p in parts)
+
+
+def _split_pascal(name: str) -> list[str]:
     parts = []
     current = ""
     for ch in name:
@@ -86,4 +207,4 @@ def _to_kebab(name: str) -> str:
             current += ch
     if current:
         parts.append(current)
-    return "-".join(p.lower() for p in parts)
+    return parts

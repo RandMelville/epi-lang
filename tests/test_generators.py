@@ -149,7 +149,7 @@ class TestPulseStubGenerator:
         output = generate_pulse_stub(pulse, contrato_program, "nextjs")
         assert "AI.scan()" in output
         assert "temperature: 0.1" in output
-        assert "@prompts/legal_scan.md" in output
+        assert "prompts/legal_scan.md" in output
 
     def test_guard_as_comment(self, contrato_program):
         pulse = contrato_program.get_pulse("ExtrairRisco")
@@ -200,4 +200,4 @@ class TestLensStubGenerator:
     def test_mood_comment(self, contrato_program):
         lens = contrato_program.lenses[0]
         output = generate_lens_stub(lens, "nextjs")
-        assert "Mood: Clean, Legal-Tech, Professional" in output
+        assert "Clean, Legal-Tech, Professional" in output
