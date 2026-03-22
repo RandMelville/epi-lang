@@ -316,16 +316,103 @@ Lens Dashboard {
 
 ## 7. Related Work
 
+Epi draws on and distinguishes itself from four lineages of prior work: (a) probabilistic programming languages, (b) gradual type systems, (c) LLM-oriented DSLs, and (d) full-stack code generation tools. The table below additionally includes classical languages that address adjacent concerns — symbolic AI (Lisp, Prolog), statistical computing (R), and high-performance scientific computation (Julia) — to clarify Epi's architectural boundaries.
+
 | System | Relationship to Epi |
 |--------|---------------------|
-| **ProbZelus** (Baudart et al.) | Separates deterministic/probabilistic in reactive streams — Epi adapts this to full-stack transpilation |
-| **SlicStan** (Gorinova et al.) | Information-flow type system for probabilistic programs — Epi generalizes to application-level types |
-| **Gradual Typing** (Siek & Taha) | Mixes static/dynamic types via `?` — Epi's epistemic types add AI inference semantics |
-| **BAML** (Boundary ML) | DSL for typed LLM function signatures — Epi extends to full application generation |
-| **Wasp** (wasp-lang) | Full-stack DSL → React+Node — Epi adds epistemic types and multi-target transpilation |
+| **ProbZelus** (Baudart et al., PLDI 2020) | Separates deterministic/probabilistic execution in reactive streams — Epi adapts this separation to full-stack application transpilation |
+| **SlicStan** (Gorinova et al., POPL 2019) | Information-flow type system for probabilistic programs — Epi generalizes information-flow separation to application-level types (database vs. AI-inferred) |
+| **Gradual Typing** (Siek & Taha, 2006) | Mixes static/dynamic types via the `?` type — Epi's Rigid/Epistemic boundary is structurally analogous, but replaces the static–dynamic axis with a deterministic–stochastic axis, adding AI inference semantics and mandatory runtime validation |
+| **BAML** (Boundary ML) | DSL for typed LLM function signatures — Epi extends beyond function-level typing to full application generation (database, routes, UI) from a single declaration |
+| **Wasp** (wasp-lang) | Full-stack DSL generating React + Node.js — Epi adds the Epistemic Type System and AI-aware transpilation; Wasp has no mechanism for distinguishing deterministic from AI-inferred values |
+| **Lisp** (McCarthy, 1960) | Pioneer of symbolic AI and homoiconicity — Epi shares the philosophy of minimal primitives (Lisp's 7 forms, Epi's 5 primitives) but operates at the application orchestration layer rather than the symbolic computation layer; Epi does not implement symbolic evaluation or macro expansion |
+| **Prolog** (Colmerauer & Roussel, 1972) | Logic programming via Horn clauses and unification — Epi's Guard primitive echoes Prolog's declarative constraints, but Epi delegates inference to external LLMs rather than implementing its own resolution engine; Epi's scope is application generation, not automated theorem proving |
+| **R** (Ihaka & Gentleman, 1996) | Domain-specific language for statistical computing — R operates at the data analysis and model-fitting layer; Epi operates at the application orchestration layer and delegates statistical computation to AI model endpoints via Pulse |
+| **Julia** (Bezanson et al., 2017) | High-performance scientific computing with multiple dispatch — Julia targets the model computation layer (tensor operations, automatic differentiation, GPU kernels); Epi targets the application orchestration layer and would invoke Julia-built models as external services via Pulse |
 
 ---
 
-## 8. License
+## 8. Ethics by Design and Explainability
+
+Epi incorporates ethical safeguards and decision explainability as structural properties of the language, not as optional libraries or conventions. This approach is informed by Pereira's proposal for programming ethics into AI systems (Pereira, 2020; Pereira & Saptawijaya, 2016), which argues that ethical constraints must be *computationally enforceable* — embedded in the execution model itself, not delegated to post-hoc auditing.
+
+### 8.1 Structural Ethical Safeguards
+
+Epi enforces ethical constraints through four mechanisms that are mandatory elements of the grammar, not optional annotations:
+
+| Mechanism | Grammar Element | Ethical Property |
+|-----------|----------------|------------------|
+| **Mandatory fallback** | `on_fail` parameter in every `AI.*` call | No AI decision can silently fail. Every inference path has an explicit degradation strategy, including `ManualReview` for human-in-the-loop oversight |
+| **External prompt auditing** | `file("@prompts/...")` syntax | Prompts are version-controlled artifacts, not inline strings. Every prompt can be audited, diffed, reviewed, and A/B tested — creating a complete decision audit trail |
+| **Guard-enforced authorization** | `Guard` primitive with `Protect:` reference | AI-driven operations are subject to the same authorization constraints as deterministic operations. The transpiler rejects a Pulse that references a nonexistent Guard |
+| **Epistemic validation boundary** | `AI.*` types → Zod/Pydantic schemas | AI outputs are structurally validated before persistence. A hallucinated value outside the declared enum/range/schema is rejected at runtime, preventing bias propagation into the database |
+
+### 8.2 Explainability Properties
+
+Every AI decision made through Epi is explainable by construction:
+
+1. **Traceability**: Each AI inference is traceable to a specific Pulse, which declares its input Entity, prompt file, temperature, and fallback strategy. There are no implicit AI calls.
+
+2. **Reproducibility**: The `temperature` parameter is mandatory and explicit. Combined with the external prompt file and the declared input source, a third party can reproduce the conditions under which any AI decision was made.
+
+3. **Auditability**: The three-layer transpiler architecture guarantees that all deterministic code (database schemas, API routes, middleware) is generated without LLM involvement. Only Layer 3 (Epistemic) involves AI, and its outputs are constrained by Layer 2 validators. An auditor need only inspect Layer 3 outputs and the prompt files to understand all AI-influenced behavior.
+
+4. **Human override**: The `Fallback.ManualReview(Queue: "...")` strategy explicitly routes uncertain decisions to human reviewers, implementing the human-in-the-loop pattern as a first-class language construct rather than an application-level workaround.
+
+### 8.3 References
+
+- Pereira, L. M. (2020). *Programming Machine Ethics*. Springer.
+- Pereira, L. M., & Saptawijaya, A. (2016). *Programming Machine Ethics*. Studies in Applied Philosophy, Epistemology and Rational Ethics, vol 26. Springer, Cham.
+- Floridi, L., & Cowls, J. (2019). A unified framework of five principles for AI in society. *Harvard Data Science Review*, 1(1).
+
+---
+
+## 9. Scope Boundary: Orchestration vs. Computation
+
+Epi is an **application orchestration language**. It declares *what* an AI-augmented application should do and delegates *how* to specialized engines. This section formally defines the boundary between what Epi handles and what it delegates.
+
+### 9.1 What Epi Handles
+
+| Concern | Mechanism | Layer |
+|---------|-----------|-------|
+| Data schema definition | Entity → Prisma/SQLAlchemy | Layer 2 (Deterministic) |
+| Authentication and authorization | Guard → middleware | Layer 2 (Deterministic) |
+| AI inference orchestration | Pulse → LLM API call with validation | Layer 3 (Epistemic) |
+| Business flow composition | Pipeline → route with error handling | Layer 2 (Deterministic) |
+| UI declaration by intent | Lens → component scaffold + AI styling | Layers 2+3 |
+| Runtime validation of AI outputs | Epistemic types → Zod/Pydantic schemas | Layer 2 (Deterministic) |
+| Decision audit trail | External prompts + fallback strategies | Grammar-enforced |
+
+### 9.2 What Epi Delegates
+
+| Concern | Delegated To | Rationale |
+|---------|-------------|-----------|
+| Tensor operations, linear algebra | PyTorch, TensorFlow, JAX | Epi operates above the model computation layer. A Pulse invokes a model endpoint; it does not implement the model |
+| Automatic differentiation | Autograd libraries (PyTorch, JAX) | Differentiation is a property of the computation graph, not the orchestration graph |
+| GPU/TPU kernel optimization | CUDA, XLA, Metal via ML frameworks | Hardware-level optimization is orthogonal to application-level intent declaration |
+| Model training and fine-tuning | ML pipelines (MLflow, Kubeflow, W&B) | Training produces models; Epi consumes models. The lifecycle boundary is at the model API endpoint |
+| Statistical computation | R, Julia, Python (scipy, statsmodels) | Statistical analysis is a computational concern; Epi orchestrates the results of computation |
+| Symbolic reasoning and unification | Prolog, Datalog, knowledge graph engines | Epi's Guard primitive handles declarative constraints for authorization; full symbolic reasoning is delegated to specialized engines |
+| Low-level parallelism and threading | Target language runtime (Node.js event loop, Python asyncio) | Epi's Pipeline declares sequential composition; the transpiler generates appropriate concurrency primitives in the target |
+
+### 9.3 The Composition Principle
+
+Epi's scope boundary follows the **composition principle**: the language achieves maximum expressiveness not by incorporating every computational paradigm, but by composing cleanly with specialized tools at well-defined interfaces.
+
+A concrete example: a developer building a contract analysis system with a custom NLP model would:
+
+1. **Train the model** in PyTorch/JAX (outside Epi)
+2. **Deploy it** as an API endpoint (e.g., FastAPI + Docker)
+3. **Invoke it from Epi** via a Pulse with the endpoint as the AI provider
+4. **Validate its output** via the Epistemic Type System (inside Epi)
+
+This is analogous to SQL declaring `SELECT * FROM contracts WHERE risk = 'high'` without specifying the B-tree traversal algorithm. The power is in the declaration, not the computation.
+
+> *"The expressive power of a language is determined not only by what it can express, but by what it can safely exclude."*
+> — cf. Felleisen, M. (1991). "On the Expressive Power of Programming Languages." *Science of Computer Programming*, 17(1-3), pp. 35–75.
+
+---
+
+## 10. License
 
 Apache License 2.0 — Copyright (c) 2026 Randerson Rebouças
