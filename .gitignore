@@ -38,6 +38,9 @@ coverage.xml
 generated/
 output/
 
+# Personal documents (not part of the project)
+GUIA-PROFESSORA-ROSA.md
+
 # Environment
 .env
 .env.local
