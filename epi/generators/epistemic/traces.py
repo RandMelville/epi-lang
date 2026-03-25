@@ -44,6 +44,8 @@ export interface TraceState {
   pulseName: string;
   traceName: string;
   status: "running" | "paused" | "completed" | "error";
+  /** Original Pulse input — needed by resume to call the next Trace */
+  originalInput?: unknown;
   /** Fields declared in Expose: — surfaced for human inspection */
   exposedFields: Record<string, unknown>;
   /** Raw AI output before any correction */
@@ -193,6 +195,7 @@ def generate_trace_execution(pulse: Pulse, trace: TraceStep, program: EpiProgram
         f'    pulseName: "{pulse_pascal}",\n'
         f'    traceName: "{trace.name}",\n'
         f'    status: "running",\n'
+        f'    originalInput: input,\n'
         f'    exposedFields: {{}},\n'
         f'    confidence: 0,\n'
         f'    confidenceThreshold: CONFIDENCE_THRESHOLD,\n'
@@ -364,11 +367,25 @@ def _resume_route(pulse: Pulse, guard_role: str) -> str:
         f'import {{ execute{t.name} }} from "../../../../../traces/{pulse_kebab}/{_to_kebab(t.name)}";'
         for t in pulse.traces
     )
-    # Build dispatch map
-    dispatch_entries = "\n".join(
-        f'    "{t.name}": execute{t.name},'
-        for t in pulse.traces
-    )
+    # Build ordered trace list and next-trace dispatch
+    trace_order = [t.name for t in pulse.traces]
+    trace_order_js = ", ".join(f'"{n}"' for n in trace_order)
+
+    # Build next-trace dispatch: if current trace is N, call trace N+1
+    next_dispatch_cases = []
+    for idx, t in enumerate(pulse.traces):
+        if idx + 1 < len(pulse.traces):
+            next_t = pulse.traces[idx + 1]
+            next_dispatch_cases.append(
+                f'  if (state.traceName === "{t.name}") {{\n'
+                f"    const nextResult = await execute{next_t.name}(\n"
+                f"      state.originalInput as any,\n"
+                f"      acceptedOutput\n"
+                f"    );\n"
+                f"    return NextResponse.json({{ success: true, traceId: params.traceId, resumedBy, acceptedOutput, corrected: correction !== null, nextTrace: nextResult }});\n"
+                f"  }}"
+            )
+    next_dispatch = "\n".join(next_dispatch_cases)
 
     return (
         f"// Resume route — Continue paused trace after human review\n"
@@ -378,9 +395,9 @@ def _resume_route(pulse: Pulse, guard_role: str) -> str:
         f"// POST /api/traces/{pulse_kebab}/[traceId]/resume\n"
         f"// Body: {{ correction?: Record<string, unknown> }}\n"
         f"//\n"
-        f"// If correction is provided, it replaces the AI's raw output\n"
-        f"// and becomes the context for the next Trace in the Pulse.\n"
-        f"// If no correction, the original AI output is accepted as-is.\n"
+        f"// After approval/correction, automatically calls the NEXT trace\n"
+        f"// in sequence using the accepted output as context.\n"
+        f"// Trace order: {' -> '.join(trace_order)}\n"
         f"\n"
         f'import {{ NextRequest, NextResponse }} from "next/server";\n'
         f'import {{ getServerSession }} from "next-auth";\n'
@@ -407,8 +424,6 @@ def _resume_route(pulse: Pulse, guard_role: str) -> str:
         f"  const body = await request.json().catch(() => ({{}}));\n"
         f"  const correction = body.correction ?? null;\n"
         f'  const resumedBy = (session as {{ user?: {{ email?: string }} }}).user?.email ?? "unknown";\n'
-        f"\n"
-        f"  // Accept correction or original AI output\n"
         f"  const acceptedOutput = correction ?? state.rawOutput;\n"
         f"\n"
         f"  updateTrace(params.traceId, {{\n"
@@ -417,12 +432,17 @@ def _resume_route(pulse: Pulse, guard_role: str) -> str:
         f"    humanCorrection: correction ?? undefined,\n"
         f"  }});\n"
         f"\n"
+        f"  // Chain to next trace in sequence\n"
+        f"{next_dispatch}\n"
+        f"\n"
+        f"  // Last trace — pipeline complete\n"
         f"  return NextResponse.json({{\n"
         f"    success: true,\n"
         f"    traceId: params.traceId,\n"
         f"    resumedBy,\n"
         f"    acceptedOutput,\n"
         f"    corrected: correction !== null,\n"
+        f'    pipelineStatus: "completed",\n'
         f"  }});\n"
         f"}}\n"
     )

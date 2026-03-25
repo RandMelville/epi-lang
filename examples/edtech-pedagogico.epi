@@ -81,7 +81,7 @@ Pulse AvaliarRespostaAluno {
             temperature: 0.2,
             on_fail: Fallback.ManualReview(Queue: "Coordenacao")
         )
-        Expose: Submissao.enunciado, Submissao.criado_em
+        Expose: interpretacao, conceitos_chave, criterios_avaliacao
         Checkpoint: ReviewRequired(role: "Professor")
     }
 

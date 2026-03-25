@@ -264,8 +264,8 @@ class EpiTransformer(Transformer):
                 result.update(part)
         return result
 
-    def trace_expose(self, *dotted_names):
-        return {"expose": [str(n) for n in dotted_names]}
+    def trace_expose(self, *idents):
+        return {"expose": [str(n) for n in idents]}
 
     def trace_checkpoint(self, strategy, params_data=None):
         params: dict = {}

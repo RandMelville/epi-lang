@@ -88,7 +88,10 @@ process_step: "Execute:" ai_call
 pulse_traces: trace+
 trace: "Trace" IDENT "{" trace_body "}"
 trace_body: "Execute:" ai_call trace_expose? trace_checkpoint?
-trace_expose: "Expose:" dotted_name ("," dotted_name)*
+// Expose lists field names the AI will return in its JSON output (not input entity fields).
+// These are surfaced in the /inspect endpoint for human review.
+// Example: Expose: interpretacao, conceitos_chave
+trace_expose: "Expose:" IDENT ("," IDENT)*
 trace_checkpoint: "Checkpoint:" CHECKPOINT_STRATEGY "(" ai_call_args ")"
 CHECKPOINT_STRATEGY: "ReviewRequired" | "AutoApprove"
 

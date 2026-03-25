@@ -44,7 +44,11 @@ def _generate_nextjs_route(pipeline: Pipeline, program: EpiProgram) -> str:
         guard_check = ""
         if pulse and pulse.guard_ref:
             guard_func = pulse.guard_ref.split(".")[-1]
-            guard_check = f"    await {_to_camel(guard_func)}(session);\n"
+            # Guard returns NextResponse|null — return early if forbidden
+            guard_check = (
+                f"    const _guard{i} = {_to_camel(guard_func)}(session);\n"
+                f"    if (_guard{i}) return _guard{i};\n"
+            )
 
         result_var = f"{_to_camel(step_name)}Result"
         steps.append(
