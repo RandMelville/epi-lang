@@ -3,6 +3,13 @@ Epi Parser — Lark grammar → Typed AST (Pydantic)
 
 This is the deterministic layer of the Epistemic Transpiler.
 No LLM involvement here — pure formal parsing.
+
+v0.3 additions:
+- distribution_ref / distribution_entries / distribution_entry → prior dict
+- checkpoint_ref / checkpoint_params → CheckpointConfig
+- pulse_traces / trace / trace_body / trace_expose / trace_checkpoint → TraceStep
+- Updated epistemic_type: extracts prior + confidence_threshold from args
+- Updated ai_call: extracts on_low_confidence from args
 """
 
 from __future__ import annotations
@@ -14,6 +21,7 @@ from lark import Lark, Transformer, v_args
 
 from epi.parser.ast_nodes import (
     AICall,
+    CheckpointConfig,
     Condition,
     Entity,
     EntityField,
@@ -27,6 +35,7 @@ from epi.parser.ast_nodes import (
     Pipeline,
     Pulse,
     RigidType,
+    TraceStep,
     Widget,
     WidgetTrigger,
 )
@@ -130,10 +139,29 @@ class EpiTransformer(Transformer):
         params = {}
 
         if isinstance(args_data, dict):
-            params = args_data.get("params", {})
+            params = dict(args_data.get("params", {}))
             enum_values = args_data.get("enum_values", [])
 
-        return EpistemicType(kind=kind_str, args=params, enum_values=enum_values)
+        # v0.3: extract prior and confidence_threshold from params
+        prior: dict[str, float] = {}
+        confidence_threshold: float | None = None
+
+        if isinstance(params.get("prior"), dict):
+            prior = params.pop("prior")
+        if "confidence_threshold" in params:
+            ct = params.pop("confidence_threshold")
+            try:
+                confidence_threshold = float(ct)
+            except (TypeError, ValueError):
+                confidence_threshold = None
+
+        return EpistemicType(
+            kind=kind_str,
+            args=params,
+            enum_values=enum_values,
+            prior=prior,
+            confidence_threshold=confidence_threshold,
+        )
 
     def EPISTEMIC_KIND(self, token):
         return str(token)
@@ -150,8 +178,22 @@ class EpiTransformer(Transformer):
 
     def epistemic_arg(self, *parts):
         if len(parts) == 2:
-            return (str(parts[0]), _parse_literal(parts[1]))
+            key, value = parts
+            # v0.3: distribution_ref returns a dict
+            if isinstance(value, dict):
+                return (str(key), value)
+            return (str(key), _parse_literal(value))
         return str(parts[0])
+
+    # --- v0.3: Distribution (prior) ---
+    def distribution_ref(self, entries):
+        return dict(entries)
+
+    def distribution_entries(self, *entries):
+        return list(entries)
+
+    def distribution_entry(self, name, value):
+        return (str(name), float(value))
 
     # --- Guard ---
     def guard(self, name, body):
@@ -208,22 +250,52 @@ class EpiTransformer(Transformer):
     def process_step(self, ai_call):
         return ai_call
 
+    # --- v0.3: Trace ---
+    def pulse_traces(self, *traces):
+        return {"traces": list(traces)}
+
+    def trace(self, name, body):
+        return TraceStep(name=str(name), **body)
+
+    def trace_body(self, ai_call, *parts):
+        result: dict = {"ai_call": ai_call, "expose": [], "checkpoint": None}
+        for part in parts:
+            if isinstance(part, dict):
+                result.update(part)
+        return result
+
+    def trace_expose(self, *dotted_names):
+        return {"expose": [str(n) for n in dotted_names]}
+
+    def trace_checkpoint(self, strategy, params_data=None):
+        params: dict = {}
+        if isinstance(params_data, dict):
+            params = params_data.get("args", {})
+        return {"checkpoint": CheckpointConfig(strategy=str(strategy), params=params)}
+
+    def CHECKPOINT_STRATEGY(self, token):
+        return str(token)
+
+    # --- AI calls ---
     def ai_call(self, func, args_data):
         func_str = str(func)
         args = {}
         prompt_file = None
         fallback = None
+        on_low_confidence = None
 
         if isinstance(args_data, dict):
             args = args_data.get("args", {})
             prompt_file = args_data.get("prompt_file")
             fallback = args_data.get("fallback")
+            on_low_confidence = args_data.get("on_low_confidence")  # v0.3
 
         return AICall(
             function=func_str,
             args=args,
             prompt_file=prompt_file,
             fallback=fallback,
+            on_low_confidence=on_low_confidence,
         )
 
     def AI_FUNC(self, token):
@@ -238,6 +310,8 @@ class EpiTransformer(Transformer):
                     result["prompt_file"] = value
                 elif key == "__fallback":
                     result["fallback"] = value
+                elif key == "__checkpoint":  # v0.3
+                    result["on_low_confidence"] = value
                 else:
                     result["args"][key] = value
         return result
@@ -270,6 +344,19 @@ class EpiTransformer(Transformer):
         return str(token)
 
     def fallback_params(self, args_data):
+        if isinstance(args_data, dict):
+            return args_data.get("args", {})
+        return {}
+
+    # --- v0.3: Checkpoint reference ---
+    def checkpoint_ref(self, strategy, params=None):
+        cp = CheckpointConfig(
+            strategy=str(strategy),
+            params=params if isinstance(params, dict) else {},
+        )
+        return ("__checkpoint", cp)
+
+    def checkpoint_params(self, args_data):
         if isinstance(args_data, dict):
             return args_data.get("args", {})
         return {}

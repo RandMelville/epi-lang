@@ -1,8 +1,13 @@
 // ============================================================
-// Epi v0.2 — Formal Grammar (EBNF via Lark)
+// Epi v0.3 — Formal Grammar (EBNF via Lark)
 // Epistemic Programming Interface
 // Author: Randerson Rebouças (UFRGS)
 // License: MIT
+//
+// v0.3 additions:
+//   - Trace + Checkpoint: depuração interativa de raciocínio (Rosa)
+//   - Distribution prior + confidence_threshold: computação estocástica (Dante)
+//   - AI.reason(): novo tipo de chamada epistêmica
 // ============================================================
 
 start: metadata* declaration+
@@ -34,10 +39,18 @@ modifier_args: modifier_arg ("," modifier_arg)*
 modifier_arg: IDENT (":" literal)?
 
 // Epistemic types — AI-inferred, validated at runtime (Zod/Pydantic)
+// v0.3: prior: Distribution(...) and confidence_threshold: NUMBER supported as epistemic_args
 epistemic_type: "AI." EPISTEMIC_KIND "(" epistemic_args ")"
 EPISTEMIC_KIND: "Enum" | "Text" | "Classification" | "Embedding" | "Score"
 epistemic_args: epistemic_arg ("," epistemic_arg)*
-epistemic_arg: IDENT (":" literal)? | literal
+epistemic_arg: IDENT ":" distribution_ref
+             | IDENT (":" literal)?
+             | literal
+
+// Distribution prior — formal stochastic typing (Dante: Computação Estocástica)
+distribution_ref: "Distribution" "(" distribution_entries ")"
+distribution_entries: distribution_entry ("," distribution_entry)*
+distribution_entry: IDENT ":" NUMBER
 
 // ============================================================
 // GUARD — Authentication & State Protection
@@ -54,7 +67,7 @@ COMPARATOR: "==" | "!=" | ">" | "<" | ">=" | "<="
 // PULSE — Logic & Hallucination Control
 // ============================================================
 pulse: "Pulse" IDENT "{" pulse_body "}"
-pulse_body: pulse_input pulse_protect? pulse_process pulse_output?
+pulse_body: pulse_input pulse_protect? (pulse_process | pulse_traces) pulse_output?
 
 pulse_input: "Input:" IDENT
 pulse_protect: "Protect:" dotted_name
@@ -63,12 +76,30 @@ pulse_output: "Output:" type_or_ref
 
 process_step: "Execute:" ai_call
 
+// ============================================================
+// TRACE — Epistemic Reasoning Steps (Rosa: depuração de raciocínio)
+//
+// A Trace is a named, observable reasoning step within a Pulse.
+// Each Trace executes one AI call, can expose intermediate fields,
+// and can declare a Checkpoint that pauses execution for human review.
+// Traces within a Pulse execute sequentially; output of previous
+// Trace is available as context to the next (implicit dependency).
+// ============================================================
+pulse_traces: trace+
+trace: "Trace" IDENT "{" trace_body "}"
+trace_body: "Execute:" ai_call trace_expose? trace_checkpoint?
+trace_expose: "Expose:" dotted_name ("," dotted_name)*
+trace_checkpoint: "Checkpoint:" CHECKPOINT_STRATEGY "(" ai_call_args ")"
+CHECKPOINT_STRATEGY: "ReviewRequired" | "AutoApprove"
+
 // AI function calls — the epistemic execution layer
 ai_call: "AI." AI_FUNC "(" ai_call_args ")"
-AI_FUNC: "scan" | "summarize" | "classify" | "extract" | "generate" | "embed"
+// v0.3: added "reason" for multi-step chain-of-thought inference
+AI_FUNC: "scan" | "summarize" | "classify" | "extract" | "generate" | "embed" | "reason"
 ai_call_args: ai_call_arg ("," ai_call_arg)*
 ai_call_arg: IDENT ":" ai_call_value
 ai_call_value: literal
+             | checkpoint_ref
              | dotted_name
              | IDENT
              | file_ref
@@ -82,6 +113,11 @@ file_ref: "file" "(" ESCAPED_STRING ")"
 fallback_ref: "Fallback." FALLBACK_STRATEGY fallback_params?
 FALLBACK_STRATEGY: "ManualReview" | "ReturnEmpty" | "ReturnDefault" | "Retry" | "Escalate"
 fallback_params: "(" ai_call_args ")"
+
+// Checkpoint reference — on_low_confidence stochastic routing (Dante)
+// Usage: on_low_confidence: Checkpoint.ReviewRequired(role: "Professor")
+checkpoint_ref: "Checkpoint" "." CHECKPOINT_STRATEGY checkpoint_params?
+checkpoint_params: "(" ai_call_args ")"
 
 // ============================================================
 // PIPELINE — Flow Composition

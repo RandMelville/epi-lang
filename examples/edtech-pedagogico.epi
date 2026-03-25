@@ -1,0 +1,116 @@
+@Language: Epi v0.3
+@Goal: "Avaliação Pedagógica com Depuração Interativa de Raciocínio"
+
+// ============================================================
+// Demonstração das extensões v0.3:
+//
+//   1. prior: Distribution(...)      — Computação Estocástica (Dante Barone)
+//      O campo 'avaliacao' declara a distribuição a priori do histórico
+//      da turma. O transpilador gera bayesianUpdate() no validador Zod,
+//      combinando o prior com a inferência da IA via Bayes.
+//
+//   2. confidence_threshold: 0.85    — encaminhamento estocástico (Dante)
+//      Quando a confiança da IA fica abaixo de 0.85, o output é
+//      automaticamente encaminhado para revisão humana.
+//
+//   3. Trace + Expose + Checkpoint   — depuração de raciocínio (Rosa)
+//      O Pulse é decomposto em etapas visíveis. O professor pode
+//      inspecionar o raciocínio da IA ANTES de ela ver a resposta do
+//      aluno. Um Checkpoint pausa a execução e aguarda aprovação.
+//      Isso é o "breakpoint epistêmico" descrito pela Rosa.
+// ============================================================
+
+// --- Entidades ---
+
+Entity Aluno {
+    id: UUID(auto),
+    nome: Text,
+    matricula: Text,
+    nivel: AI.Enum(Iniciante, Intermediario, Avancado)
+}
+
+Entity Submissao {
+    id: UUID(auto),
+    enunciado: Text,
+    resposta_aluno: Text,
+    criado_em: DateTime(auto),
+    // prior: histórico real da turma (40% correto, 45% parcial, 15% incorreto)
+    // confidence_threshold: abaixo de 0.85 → pausa para revisão do professor
+    avaliacao: AI.Enum(
+        Correto, Parcial, Incorreto,
+        prior: Distribution(Correto: 0.40, Parcial: 0.45, Incorreto: 0.15),
+        confidence_threshold: 0.85,
+        strict: true
+    ),
+    confianca: AI.Score(min: 0, max: 1),
+    comentario: AI.Text(max_tokens: 200)
+}
+
+// --- Guards ---
+
+Guard SoProfessores {
+    Condition: Auth.Role == "Professor"
+}
+
+Guard ProfessorOuAdmin {
+    Condition: Auth.Role == "Professor" || Auth.Role == "Admin"
+}
+
+// --- Pulse com Raciocínio Depurável (Rosa + Dante) ---
+//
+// Este Pulse usa Trace em vez de Process.
+// Cada Trace é uma etapa de raciocínio nomeada, observável e interrompível.
+//
+// Etapa 1 — CompreenderEnunciado:
+//   A IA interpreta o enunciado e declara os critérios de avaliação.
+//   O professor VÊ esse raciocínio antes de a IA ver a resposta do aluno.
+//   Checkpoint: ReviewRequired — pausa sempre, independente da confiança.
+//
+// Etapa 2 — AvaliarResposta:
+//   A IA usa o contexto aprovado da etapa 1 para avaliar a resposta.
+//   on_low_confidence: pausa automaticamente se confiança < 0.85.
+
+Pulse AvaliarRespostaAluno {
+    Input: Submissao
+    Protect: Guard.SoProfessores
+
+    Trace CompreenderEnunciado {
+        Execute: AI.reason(
+            source: Input.enunciado,
+            prompt: file("@prompts/compreender-enunciado.md"),
+            temperature: 0.2,
+            on_fail: Fallback.ManualReview(Queue: "Coordenacao")
+        )
+        Expose: Submissao.enunciado, Submissao.criado_em
+        Checkpoint: ReviewRequired(role: "Professor")
+    }
+
+    Trace AvaliarResposta {
+        Execute: AI.classify(
+            source: Input.resposta_aluno,
+            prompt: file("@prompts/avaliar-pedagogicamente.md"),
+            temperature: 0.1,
+            confidence_threshold: 0.85,
+            on_low_confidence: Checkpoint.ReviewRequired(role: "Professor"),
+            on_fail: Fallback.ManualReview(Queue: "Professores")
+        )
+    }
+
+    Output: Submissao.avaliacao
+}
+
+// --- Pipeline ---
+
+Pipeline FluxoAvaliacaoPedagogica {
+    Flow: AvaliarRespostaAluno -> NotificarAluno
+    On_Error: Retry(max: 2, backoff: exponential)
+}
+
+// --- UI ---
+
+Lens PainelProfessor {
+    Mood: "Clean, Educational, Trustworthy, Calm"
+    Display:
+        Table(Submissao, columns: [enunciado, avaliacao, confianca]),
+        Form(Submissao) -> Button("Avaliar").trigger(AvaliarRespostaAluno)
+}

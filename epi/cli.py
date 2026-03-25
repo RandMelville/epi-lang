@@ -122,6 +122,7 @@ def transpile(
     from epi.generators.deterministic.validators import generate_validators
     from epi.generators.epistemic.ai_scan import generate_pulse_stub
     from epi.generators.epistemic.lens_mood import generate_lens_stub
+    from epi.generators.epistemic.traces import generate_all_traces
 
     source = _read_source(file)
     try:
@@ -156,6 +157,10 @@ def transpile(
         stub = generate_lens_stub(lens, target)
         fname = f"components/{_to_kebab(lens.name)}.tsx"
         files_to_write[fname] = stub
+
+    # v0.3: Trace infrastructure (inspect/resume routes + store)
+    trace_files = generate_all_traces(program)
+    files_to_write.update(trace_files)
 
     # Output
     if dry_run:

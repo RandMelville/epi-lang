@@ -6,6 +6,13 @@ The AST separates into two domains:
 - Epistemic nodes: AI.* types, AI.* calls, Fallbacks, Lens Mood
 
 This separation IS the Epistemic Type System in action.
+
+v0.3 additions:
+- EpistemicType: prior (Distribution) + confidence_threshold (Dante)
+- CheckpointConfig: encaminhamento estocástico on_low_confidence
+- TraceStep: raciocínio observável e interrompível (Rosa)
+- Pulse.traces: lista de TraceStep como alternativa a process_steps
+- AICall.on_low_confidence: aciona checkpoint quando confiança < threshold
 """
 
 from __future__ import annotations
@@ -46,6 +53,16 @@ class EpistemicType(BaseModel):
     kind: str  # Enum, Text, Classification, Embedding, Score
     args: dict[str, str | bool | int | float | list[str] | None] = Field(default_factory=dict)
     enum_values: list[str] = Field(default_factory=list)
+    # v0.3 — Stochastic Computation (Dante Barone)
+    prior: dict[str, float] = Field(default_factory=dict)
+    """Bayesian prior distribution over enum values.
+    Example: {"Correto": 0.40, "Parcial": 0.45, "Incorreto": 0.15}
+    Transpiler generates bayesianUpdate() in the Zod validator layer.
+    """
+    confidence_threshold: float | None = None
+    """Minimum confidence required to accept AI output without human review.
+    When set and on_low_confidence is declared in the Pulse, triggers Checkpoint.
+    """
 
 
 FieldType = RigidType | EpistemicType
@@ -90,6 +107,21 @@ class Guard(BaseModel):
 
 
 # ============================================================
+# Checkpoint — Stochastic routing + epistemic pause (Dante + Rosa)
+# ============================================================
+
+class CheckpointConfig(BaseModel):
+    """Declares what happens when the AI confidence falls below threshold
+    (on_low_confidence in AICall) or at the end of a Trace (unconditional pause).
+
+    strategy: ReviewRequired — pause and wait for human review
+              AutoApprove    — log and proceed without human review
+    """
+    strategy: str  # ReviewRequired, AutoApprove
+    params: dict[str, str] = Field(default_factory=dict)
+
+
+# ============================================================
 # Pulse — Logic + Hallucination Control
 # ============================================================
 
@@ -99,18 +131,49 @@ class FallbackConfig(BaseModel):
 
 
 class AICall(BaseModel):
-    function: str  # scan, summarize, classify, extract, generate, embed
+    function: str  # scan, summarize, classify, extract, generate, embed, reason
     args: dict[str, str | float | int | None] = Field(default_factory=dict)
     prompt_file: str | None = None
     fallback: FallbackConfig | None = None
+    # v0.3 — triggers checkpoint when confidence < confidence_threshold
+    on_low_confidence: CheckpointConfig | None = None
+
+
+# ============================================================
+# TraceStep — Epistemic reasoning step (Rosa: depuração de raciocínio)
+# ============================================================
+
+class TraceStep(BaseModel):
+    """A named, observable reasoning step within a Pulse.
+
+    Traces within a Pulse execute sequentially. The output of each
+    Trace is available as implicit context to subsequent Traces.
+
+    expose: list of Entity.field dotted names whose values are
+            surfaced in the /inspect endpoint for human review.
+
+    checkpoint: when present, execution ALWAYS pauses after this
+                Trace and waits for human review before proceeding.
+                Distinct from on_low_confidence (confidence-conditional).
+    """
+    name: str
+    ai_call: AICall
+    expose: list[str] = Field(default_factory=list)
+    checkpoint: CheckpointConfig | None = None
 
 
 class Pulse(BaseModel):
     name: str
     input_entity: str
     guard_ref: str | None = None
-    process_steps: list[AICall]
+    process_steps: list[AICall] = Field(default_factory=list)
+    # v0.3 — multi-step epistemic reasoning (Rosa)
+    traces: list[TraceStep] = Field(default_factory=list)
     output_ref: str | None = None
+
+    @property
+    def has_traces(self) -> bool:
+        return len(self.traces) > 0
 
 
 # ============================================================
