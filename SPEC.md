@@ -1,11 +1,11 @@
-# Epi Language Specification v0.2
+# Epi Language Specification v0.3
 
 **Epi — Epistemic Programming Interface**
 *A Zero-Stack Intent-Oriented Language with Epistemic Type System*
 
 **Author:** Randerson Rebouças (UFRGS — Doutorado em Computação na Educação)
-**Version:** 0.2
-**Date:** 2026-03-19
+**Version:** 0.3
+**Date:** 2026-03-25
 **License:** MIT
 
 ---
@@ -50,12 +50,28 @@ Epistemic types represent values that require AI inference but are **constrained
 ```
 AI.Enum(Value1, Value2, ..., strict: true)  → AI infers, but must match enum
 AI.Text(max_tokens: N)                       → AI generates text, length-bounded
-AI.Classification(labels: [...])             → AI classifies into fixed labels
 AI.Score(min: 0, max: 1)                     → AI scores within range
 AI.Embedding(dimensions: N)                  → AI generates vector embedding
 ```
 
 **Property**: An epistemic type generates BOTH the inference call AND the runtime validation schema. The AI may hallucinate — but the validation catches it.
+
+### 2.3 Distribution Prior (v0.3)
+
+Epistemic Enum fields can declare a **Bayesian prior** — the initial probability distribution over values before any evidence is observed. This enables stochastic routing and Bayesian update generation.
+
+```epi
+avaliacao: AI.Enum(Correto, Parcial, Incorreto,
+    prior: Distribution(Correto: 0.40, Parcial: 0.45, Incorreto: 0.15),
+    confidence_threshold: 0.85
+)
+```
+
+**Transpilation effects:**
+- `prior` → generates `bayesianUpdate{Entity}{Field}()` TypeScript function implementing posterior ∝ likelihood × prior, normalized
+- `confidence_threshold` → generates companion `{Schema}Confidence` Zod schema with `requiresReview: confidence < threshold`
+
+**Two-level enforcement**: `confidence_threshold` on the Entity type is the *data layer* constraint (persisted validation). `on_low_confidence` inside an Execute call is the *runtime routing* constraint (triggers human review mid-pipeline). Both can coexist for defense-in-depth.
 
 ### 2.3 The Epistemic Boundary
 
@@ -132,24 +148,47 @@ Guard SomenteAdvogados {
 
 The execution primitive — where logic occurs and hallucination is controlled. Every AI interaction is explicit, with mandatory parameters.
 
+A Pulse has two execution modes:
+
+**Classic mode** (`Process:`): single-step AI call, immediate output.
+
+**Trace mode** (`Trace`): multi-step observable pipeline where each step is named, interruptible, and inspectable. Used when reasoning must be decomposed into auditable sub-tasks (e.g., `CompreenderEnunciado` → `AvaliarResposta`).
+
 **Syntax:**
 ```ebnf
 pulse      ::= "Pulse" IDENT "{" pulse_body "}"
 pulse_body ::= "Input:" IDENT
                ("Protect:" dotted_name)?
-               "Process:" process_step+
+               (pulse_process | pulse_traces)
                ("Output:" type_or_ref)?
-process_step ::= "Execute:" ai_call
-ai_call    ::= "AI." FUNC "(" named_args ")"
+pulse_process  ::= "Process:" ("Execute:" ai_call)+
+pulse_traces   ::= trace+
+trace          ::= "Trace" IDENT "{" trace_body "}"
+trace_body     ::= "Execute:" ai_call
+                   ("Expose:" IDENT ("," IDENT)*)?
+                   ("Checkpoint:" checkpoint_strategy "(" args ")")?
+ai_call        ::= "AI." FUNC "(" named_args ")"
 ```
+
+**AI Functions:** `scan`, `classify`, `summarize`, `extract`, `generate`, `embed`, `reason`
+
+The `reason` function signals chain-of-thought reasoning intent (same API call, different semantic annotation for tracing and audit purposes).
 
 **Mandatory AI call parameters:**
 | Parameter | Purpose |
 |-----------|---------|
-| `source` | Input data reference |
+| `source` | Input data reference (e.g., `Input.documento`) |
 | `prompt` | External prompt file via `file("@prompts/...")` |
 | `temperature` | Controls randomness (lower = more deterministic) |
 | `on_fail` | Fallback strategy when AI fails |
+
+**Trace-specific parameters:**
+
+| Construct | Purpose |
+|-----------|---------|
+| `Expose: field1, field2` | Fields in the AI's JSON output to make available to subsequent traces |
+| `Checkpoint: ReviewRequired(...)` | Pause execution for human review before proceeding |
+| `on_low_confidence: Checkpoint.ReviewRequired(...)` | Conditional pause — only triggers when `_confidence < threshold` |
 
 **Fallback Strategies:**
 - `Fallback.ManualReview(Queue: "...")` — route to human queue
@@ -158,7 +197,7 @@ ai_call    ::= "AI." FUNC "(" named_args ")"
 - `Fallback.Retry(max: N)` — retry with backoff
 - `Fallback.Escalate(to: "...")` — escalate to another system
 
-**Example:**
+**Classic Pulse Example:**
 ```epi
 Pulse ExtrairRisco {
     Input: Contrato
@@ -175,6 +214,58 @@ Pulse ExtrairRisco {
 ```
 
 **Key design decision**: By requiring `prompt: file(...)`, Epi forces prompts to be external, version-controlled files — not inline strings. This enables prompt auditing and A/B testing.
+
+### 3.3.1 Trace: Epistemic Debugging (v0.3)
+
+Trace is the Epi mechanism for **epistemic debugging** — the ability to observe, interrupt, and validate intermediate reasoning steps inside a Pulse. This addresses a fundamental problem in AI-augmented systems: when a complex AI decision fails, there is no way to identify *which reasoning step* failed.
+
+**Key properties of Trace:**
+
+1. **Observable**: Each Trace step is named and its output is stored in a `TraceState` record, accessible via the generated `/inspect` API route.
+
+2. **Interruptible**: A `Checkpoint` declaration pauses execution before the next step, storing the current state for human review. Execution resumes via the generated `/resume` route only after explicit human approval.
+
+3. **Chainable**: The `Expose:` declaration makes specific fields from one Trace's AI output available as context for the next Trace.
+
+**Checkpoint strategies:**
+- `Checkpoint: ReviewRequired(...)` — unconditional pause (always requires human approval)
+- `on_low_confidence: Checkpoint.ReviewRequired(...)` — conditional pause (triggers only when AI's `_confidence` field is below a threshold)
+
+**The `_confidence` contract**: Prompts used in Trace steps must include a `_confidence` field (0.0–1.0) in their JSON output. This is enforced by convention (documented in the prompt file) and extracted at runtime by the generated Trace execution code.
+
+**Generated infrastructure for a Trace Pulse:**
+- `lib/trace-store.ts` — in-memory store for `TraceState` (keyed by traceId, includes `originalInput`, step outputs, and `pipelineStatus`)
+- `traces/{pulse}/{trace}.ts` — execution function for each Trace step (calls Claude, extracts `_confidence`, saves state, checks `shouldPause`)
+- `app/api/traces/{pulse}/[traceId]/inspect/route.ts` — GET route for human review UI
+- `app/api/traces/{pulse}/[traceId]/resume/route.ts` — POST route to accept a step output and chain to the next Trace
+
+**Trace Pulse Example:**
+```epi
+Pulse AvaliarRespostaAluno {
+    Input: Submissao
+
+    Trace CompreenderEnunciado {
+        Execute: AI.reason(
+            source: Input.enunciado,
+            prompt: file("@prompts/compreender-enunciado.md"),
+            temperature: 0.2,
+            on_fail: Fallback.ReturnEmpty
+        )
+        Expose: interpretacao, conceitos_chave, criterios_avaliacao
+        Checkpoint: ReviewRequired()
+    }
+
+    Trace AvaliarResposta {
+        Execute: AI.classify(
+            source: Input.resposta,
+            prompt: file("@prompts/avaliar-pedagogicamente.md"),
+            temperature: 0.1,
+            on_fail: Fallback.ManualReview(Queue: "Professores"),
+            on_low_confidence: Checkpoint.ReviewRequired()
+        )
+    }
+}
+```
 
 ---
 
@@ -269,8 +360,10 @@ Epi source files use the `.epi` extension.
 
 ## 6. Complete Example
 
+### 6.1 Classic Pulse (Legal Analysis)
+
 ```epi
-@Language: Epi v0.2
+@Language: Epi v0.3
 @Goal: "Análise de Contratos com Human-in-the-loop"
 
 Entity Contrato {
@@ -311,6 +404,77 @@ Lens Dashboard {
         Form(Contrato) -> Button("Analisar").trigger(ExtrairRisco)
 }
 ```
+
+### 6.2 Trace Pulse with Stochastic Routing (EdTech)
+
+This example demonstrates v0.3 features: Trace, Checkpoint, Distribution prior, and confidence_threshold.
+
+```epi
+@Language: Epi v0.3
+@Goal: "Avaliação pedagógica com raciocínio epistêmico observável"
+
+Entity Aluno {
+    id: UUID(auto),
+    nome: Text
+}
+
+Entity Submissao {
+    id: UUID(auto),
+    enunciado: Text,
+    resposta: Text,
+    avaliacao: AI.Enum(Correto, Parcial, Incorreto,
+        prior: Distribution(Correto: 0.40, Parcial: 0.45, Incorreto: 0.15),
+        confidence_threshold: 0.85
+    ),
+    justificativa: AI.Text(max_tokens: 200),
+    aluno_id: Text
+}
+
+Guard SomenteProfessores {
+    Condition: Auth.Role == "Teacher"
+}
+
+Pulse AvaliarRespostaAluno {
+    Input: Submissao
+
+    Trace CompreenderEnunciado {
+        Execute: AI.reason(
+            source: Input.enunciado,
+            prompt: file("@prompts/compreender-enunciado.md"),
+            temperature: 0.2,
+            on_fail: Fallback.ReturnEmpty
+        )
+        Expose: interpretacao, conceitos_chave, criterios_avaliacao
+        Checkpoint: ReviewRequired()
+    }
+
+    Trace AvaliarResposta {
+        Execute: AI.classify(
+            source: Input.resposta,
+            prompt: file("@prompts/avaliar-pedagogicamente.md"),
+            temperature: 0.1,
+            on_fail: Fallback.ManualReview(Queue: "Professores"),
+            on_low_confidence: Checkpoint.ReviewRequired()
+        )
+    }
+}
+
+Pipeline AvaliacaoPedagogica {
+    Flow: AvaliarRespostaAluno
+    On_Error: Retry(max: 2, backoff: fixed)
+}
+```
+
+**Generated artifacts for this program:**
+- `prisma/schema.prisma` — Aluno + Submissao models
+- `validators/submissao.ts` — Zod schemas for `avaliacao` and `justificativa`
+- `validators/submissao.ts` — `bayesianUpdateSubmissaoAvaliacao()` function (from `prior:`)
+- `validators/submissao.ts` — `SubmissaoAvaliacaoSchemaConfidence` schema (from `confidence_threshold:`)
+- `lib/trace-store.ts` — TraceState store
+- `traces/avaliar-resposta-aluno/compreender-enunciado.ts` — Trace 1 executor
+- `traces/avaliar-resposta-aluno/avaliar-resposta.ts` — Trace 2 executor
+- `app/api/traces/avaliar-resposta-aluno/[traceId]/inspect/route.ts`
+- `app/api/traces/avaliar-resposta-aluno/[traceId]/resume/route.ts`
 
 ---
 

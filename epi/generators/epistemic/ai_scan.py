@@ -107,13 +107,20 @@ def _nextjs_ai_call(call: AICall, pulse: Pulse, program: EpiProgram, index: int)
             )
         prompt_load = f'  const systemPrompt = {base_prompt};\n'
 
-    # Source reference
+    # Source reference — normalise capitalisation: "Input.campo" → "input.campo"
     source = call.args.get("source", "input")
+    if isinstance(source, str):
+        if source == "Input":
+            source = "input"
+        elif source.startswith("Input."):
+            source = "input." + source[6:]
 
     # Validator reference
     validator_ref = _get_validator_ref(pulse, program)
 
     # Validation block
+    # NOTE: 'error' is only in scope inside the catch block above.
+    # For the validation failure path we use parsed.error (Zod), not the caught exception.
     validation_block = ""
     if validator_ref:
         validation_block = (
@@ -124,7 +131,8 @@ def _nextjs_ai_call(call: AICall, pulse: Pulse, program: EpiProgram, index: int)
             f"    console.error(`[Epi] Validation failed for {pulse.name}:`, parsed.error.issues);\n"
         )
         if call.fallback:
-            fallback_code = _nextjs_fallback(call, indent=4)
+            # Pass parsed.error as the error source — avoids referencing 'error' outside catch
+            fallback_code = _nextjs_fallback(call, indent=4, error_expr="parsed.error")
             validation_block += fallback_code
         else:
             validation_block += (
@@ -196,14 +204,25 @@ def _nextjs_ai_call(call: AICall, pulse: Pulse, program: EpiProgram, index: int)
     )
 
 
-def _nextjs_fallback(call: AICall, indent: int = 4) -> str:
-    """Generate fallback strategy code."""
+def _nextjs_fallback(call: AICall, indent: int = 4, error_expr: str | None = None) -> str:
+    """Generate fallback strategy code.
+
+    error_expr: expression to use as the error source. Defaults to the caught 'error'
+    variable (valid inside catch blocks). Pass "parsed.error" when called from a
+    validation context where 'error' is not in scope.
+    """
     pad = " " * indent
     if not call.fallback:
         return f'{pad}throw new Error("AI call failed and no fallback defined");\n'
 
     strategy = call.fallback.strategy
     params = call.fallback.params
+
+    # Error message expression — safe to use in any context
+    if error_expr:
+        reason_expr = f'String({error_expr})'
+    else:
+        reason_expr = 'error instanceof Error ? error.message : "Unknown error"'
 
     if strategy == "ManualReview":
         queue = params.get("Queue", "default")
@@ -212,7 +231,7 @@ def _nextjs_fallback(call: AICall, indent: int = 4) -> str:
             f"{pad}return {{\n"
             f'{pad}  status: "pending_review",\n'
             f'{pad}  queue: "{queue}",\n'
-            f'{pad}  reason: error instanceof Error ? error.message : "Unknown error",\n'
+            f'{pad}  reason: {reason_expr},\n'
             f'{pad}  timestamp: new Date().toISOString(),\n'
             f"{pad}}};\n"
         )
@@ -229,9 +248,13 @@ def _nextjs_fallback(call: AICall, indent: int = 4) -> str:
         )
     elif strategy == "Retry":
         max_retries = params.get("max", "3")
+        if error_expr:
+            throw_expr = f'new Error({reason_expr})'
+        else:
+            throw_expr = 'error'
         return (
             f"{pad}// Fallback: Retry (handled at Pipeline level, max: {max_retries})\n"
-            f"{pad}throw error;\n"
+            f"{pad}throw {throw_expr};\n"
         )
     elif strategy == "Escalate":
         target = params.get("to", "system")
@@ -240,7 +263,7 @@ def _nextjs_fallback(call: AICall, indent: int = 4) -> str:
             f"{pad}return {{\n"
             f'{pad}  status: "escalated",\n'
             f'{pad}  escalated_to: "{target}",\n'
-            f'{pad}  reason: error instanceof Error ? error.message : "Unknown error",\n'
+            f'{pad}  reason: {reason_expr},\n'
             f"{pad}}};\n"
         )
     else:

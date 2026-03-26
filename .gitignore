@@ -36,12 +36,18 @@ coverage.xml
 
 # Generated output
 generated/
+generated-v03/
 output/
 
 # Personal documents (not part of the project)
 GUIA-PROFESSORA-ROSA.md
 REGISTRO-INPI.md
 *.pdf
+
+# INPI registration package (contains personal data)
+inpi-package/
+epi-v*.zip
+DECLARACAO-AUTORIA-INPI.md
 
 # Environment
 .env

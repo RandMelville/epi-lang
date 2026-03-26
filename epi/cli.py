@@ -25,7 +25,7 @@ from epi.parser.ast_nodes import TypeDomain
 
 app = typer.Typer(
     name="epi",
-    help="Epi — Epistemic Programming Interface v0.2\nTranspile .epi files into full-stack projects.",
+    help="Epi — Epistemic Programming Interface v0.3\nTranspile .epi files into full-stack projects.",
     add_completion=False,
 )
 console = Console()
