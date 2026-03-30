@@ -123,6 +123,14 @@ def transpile(
     from epi.generators.epistemic.ai_scan import generate_pulse_stub
     from epi.generators.epistemic.lens_mood import generate_lens_stub
     from epi.generators.epistemic.traces import generate_all_traces
+    from epi.generators.scaffold import (
+        generate_package_json,
+        generate_tsconfig,
+        generate_next_config,
+        generate_env_example,
+        generate_gitignore,
+        generate_readme,
+    )
 
     source = _read_source(file)
     try:
@@ -162,6 +170,31 @@ def transpile(
     trace_files = generate_all_traces(program)
     files_to_write.update(trace_files)
 
+    # Scaffold: project configuration files
+    if target == "nextjs":
+        files_to_write["package.json"] = generate_package_json(program)
+        files_to_write["tsconfig.json"] = generate_tsconfig()
+        files_to_write["next.config.js"] = generate_next_config()
+    files_to_write[".env.example"] = generate_env_example()
+    files_to_write[".gitignore"] = generate_gitignore()
+    files_to_write["README.md"] = generate_readme(program, target)
+
+    # Prompt files: copy referenced prompts to output/prompts/
+    prompt_names = _collect_prompt_files(program)
+    prompts_src = _find_prompts_dir(file)
+    for prompt_name in sorted(prompt_names):
+        if prompts_src:
+            src = prompts_src / prompt_name
+            if src.exists():
+                files_to_write[f"prompts/{prompt_name}"] = src.read_text()
+            else:
+                console.print(f"  [yellow]warning[/yellow] prompt not found: {src}")
+        else:
+            console.print(f"  [yellow]warning[/yellow] prompts/ directory not found — {prompt_name} will be missing")
+
+    # Detect Anthropic usage for setup warning
+    uses_anthropic = any("Anthropic" in content for content in files_to_write.values())
+
     # Output
     if dry_run:
         console.print(Panel("[bold]Dry run — files that would be generated:[/bold]"))
@@ -175,15 +208,63 @@ def transpile(
             full_path.write_text(content)
             console.print(f"  [green]wrote[/green] {filepath}")
 
+        next_steps = (
+            "  1. cd " + str(outdir) + "\n"
+            "  2. npm install\n"
+            "  3. cp .env.example .env\n"
+            "  4. Edit .env — set DATABASE_URL and ANTHROPIC_API_KEY\n"
+            "  5. npx prisma migrate dev --name init\n"
+            "  6. npm run dev"
+        )
+        if not uses_anthropic:
+            next_steps = next_steps.replace("  4. Edit .env — set DATABASE_URL and ANTHROPIC_API_KEY\n", "  4. Edit .env — set DATABASE_URL\n")
+
         console.print(
             Panel(
                 f"[bold green]Transpilation complete![/bold green]\n"
                 f"  Target: {target}\n"
                 f"  Files: {len(files_to_write)}\n"
-                f"  Output: {outdir.resolve()}",
+                f"  Output: {outdir.resolve()}\n\n"
+                f"[bold]Next steps:[/bold]\n{next_steps}",
                 title="Epi Transpiler",
             )
         )
+
+        if uses_anthropic:
+            console.print(
+                Panel(
+                    "[bold yellow]ANTHROPIC_API_KEY required[/bold yellow]\n\n"
+                    "This project calls the Claude API. Before running:\n"
+                    "  • Get your key at [link]https://console.anthropic.com/keys[/link]\n"
+                    "  • Add to .env: ANTHROPIC_API_KEY=sk-ant-...",
+                    title="Setup",
+                )
+            )
+
+
+def _collect_prompt_files(program) -> set[str]:
+    """Return set of prompt filenames (without @prompts/ prefix) referenced by all Pulses."""
+    names: set[str] = set()
+    for pulse in program.pulses:
+        for step in pulse.process_steps:
+            if step.prompt_file:
+                names.add(step.prompt_file.replace("@prompts/", ""))
+        for trace in pulse.traces:
+            if trace.ai_call.prompt_file:
+                names.add(trace.ai_call.prompt_file.replace("@prompts/", ""))
+    return names
+
+
+def _find_prompts_dir(source_file: Path) -> Path | None:
+    """Locate the prompts/ directory: first next to the source file, then in CWD."""
+    candidates = [
+        source_file.parent / "prompts",
+        Path.cwd() / "prompts",
+    ]
+    for candidate in candidates:
+        if candidate.is_dir():
+            return candidate
+    return None
 
 
 def _read_source(file: Path) -> str:
