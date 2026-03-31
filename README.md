@@ -8,14 +8,14 @@
 
 <p align="center">
   <a href="https://github.com/RandMelville/epi-lang/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/version-0.2.0-orange.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-0.3.0-orange.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/status-research%20%2F%20active-green.svg" alt="Status">
 </p>
 
 ---
 
-> **Research Status: Active / Structural Validation (v0.2)**
+> **Research Status: Active / Structural Validation (v0.3)**
 >
 > Author: [Randerson Rebouças](https://github.com/RandMelville) — PhD Candidate, UFRGS
 

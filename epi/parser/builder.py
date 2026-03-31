@@ -40,7 +40,7 @@ from epi.parser.ast_nodes import (
     WidgetTrigger,
 )
 
-GRAMMAR_PATH = Path(__file__).parent.parent.parent / "grammar" / "epi.lark"
+GRAMMAR_PATH = Path(__file__).parent.parent / "grammar" / "epi.lark"
 
 
 def _get_parser() -> Lark:
