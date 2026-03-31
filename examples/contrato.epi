@@ -1,4 +1,4 @@
-@Language: Epi v0.2
+@Language: Epi v0.3
 @Goal: "Análise de Contratos com Human-in-the-loop"
 
 Entity Contrato {

@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/RandMelville/epi-lang/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/version-0.3.0-orange.svg" alt="Version">
+  <a href="https://pypi.org/project/epi-lang/"><img src="https://img.shields.io/pypi/v/epi-lang?color=orange" alt="PyPI"></a>
   <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/status-research%20%2F%20active-green.svg" alt="Status">
 </p>
@@ -46,7 +46,7 @@ You write `.epi`. The transpiler generates a complete, auditable project: databa
 ## How It Looks
 
 ```epi
-@Language: Epi v0.2
+@Language: Epi v0.3
 @Goal: "Contract Analysis with Human-in-the-loop"
 
 Entity Contrato {
@@ -141,12 +141,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown.
 ## Quick Start
 
 ```bash
-# Clone
-git clone https://github.com/RandMelville/epi-lang.git
-cd epi-lang
-
-# Install
-pip install -e ".[dev]"
+# Install from PyPI
+pip install epi-lang
 
 # Validate syntax
 epi validate examples/contrato.epi
@@ -155,10 +151,18 @@ epi validate examples/contrato.epi
 epi transpile examples/contrato.epi --target nextjs --outdir ./generated
 ```
 
+For development:
+
+```bash
+git clone https://github.com/RandMelville/epi-lang.git
+cd epi-lang
+pip install -e ".[dev]"
+```
+
 ## Project Structure
 
 ```
-grammar/epi.lark            EBNF grammar definition
+epi/grammar/epi.lark        EBNF grammar definition
 epi/parser/ast_nodes.py     Pydantic AST models (Epistemic Type System)
 epi/parser/builder.py       Lark Transformer (parse tree → typed AST)
 epi/generators/             Code generators
@@ -182,20 +186,21 @@ MANIFESTO.md                Project philosophy
 
 ## Status
 
-**v0.2 — Research / Structural Validation**
+**v0.3 — Research / Active Development**
 
 - [x] Formal specification (SPEC.md)
 - [x] EBNF grammar (Lark)
 - [x] AST node models (Pydantic)
 - [x] Lark Transformer (parser → typed AST)
 - [x] Deterministic generators (Prisma, middleware, routes with retry)
-- [x] Epistemic generators (stubs with fallback metadata)
+- [x] Epistemic generators (Claude API integration, fallback metadata)
+- [x] Lens Mood → Tailwind styling (6 moods)
+- [x] Epistemic traces + checkpoints (human-in-the-loop)
 - [x] CLI (parse, validate, transpile)
-- [x] Parser end-to-end validation
+- [x] 121 tests (pytest)
+- [x] PyPI package (`pip install epi-lang`)
 - [ ] Template expansion for FastAPI target
-- [ ] Epistemic layer integration (Claude API)
-- [ ] Lens Mood → LLM-driven styling
-- [ ] Academic paper (ArXiv preprint)
+- [ ] Academic paper (ArXiv submission)
 
 ## Related Work
 
@@ -216,7 +221,7 @@ If you use Epi in academic work, please cite:
   title        = {Epi: An Epistemic Programming Interface for AI-Aware Full-Stack Transpilation},
   year         = {2026},
   url          = {https://github.com/RandMelville/epi-lang},
-  version      = {0.2.0}
+  version      = {0.3.0}
 }
 ```
 
