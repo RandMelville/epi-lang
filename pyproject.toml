@@ -6,7 +6,7 @@ readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.11"
 authors = [
-    { name = "Randerson Rebouças", email = "randersonreboucas@gmail.com" },
+    { name = "Randerson Rebouças", email = "randerson.melville@gmail.com" },
 ]
 keywords = [
     "language",
