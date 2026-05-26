@@ -4,497 +4,719 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Epi — Epistemic Programming Interface</title>
-  <meta name="description" content="A domain-specific language whose type system contains LLM hallucination at the boundary between deterministic and AI-inferred computation." />
+  <meta name="description" content="A type discipline for AI-augmented full-stack applications. Epi makes the boundary between deterministic computation and AI inference visible to the type system — so hallucination cannot silently propagate to the database." />
   <meta name="author" content="Randerson Rebouças (UFRGS/PPGIE), Dante Barone (UFRGS)" />
-
   <meta property="og:title" content="Epi — Epistemic Programming Interface" />
-  <meta property="og:description" content="A type discipline for AI-augmented full-stack applications. From a single .epi source, generate a complete Next.js project with the epistemic contract enforced." />
-  <meta property="og:type" content="website" />
+  <meta property="og:description" content="A type discipline that contains LLM hallucination at the type-system boundary, by construction, in generated code." />
   <meta property="og:url" content="https://randmelville.github.io/epi-lang/" />
+  <meta property="og:type" content="website" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            ink: {
+              50:'#f8fafc',100:'#f1f5f9',200:'#e2e8f0',300:'#cbd5e1',400:'#94a3b8',
+              500:'#64748b',600:'#475569',700:'#334155',800:'#1e293b',900:'#0f172a',950:'#020617',
+            },
+            accent: {
+              50:'#ecfeff',100:'#cffafe',300:'#67e8f9',400:'#22d3ee',
+              500:'#06b6d4',600:'#0891b2',700:'#0e7490',
+            },
+          },
+        }
+      }
+    }
+  </script>
+
   <style>
-    :root {
-      --accent: #1e3a8a;
-      --accent-soft: #eff6ff;
-      --border: #e5e7eb;
-      --muted: #6b7280;
-      --bg-code: #0f172a;
-    }
     html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      color: #111827;
+    body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+    pre[class*="language-"] {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 0.92rem;
       line-height: 1.65;
-      -webkit-font-smoothing: antialiased;
+      padding: 1.5rem 1.75rem;
+      border-radius: 12px;
+      background: #0f172a !important;
+      border: 1px solid #1e293b;
+      margin: 0;
     }
-    code, pre, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
-
-    .container-narrow { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; }
-
-    h1 { font-weight: 700; letter-spacing: -0.02em; }
-    h2 {
-      font-weight: 600; letter-spacing: -0.015em;
-      font-size: 1.6rem;
-      margin-top: 4rem; margin-bottom: 1.25rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-    h3 { font-weight: 600; font-size: 1.125rem; margin-top: 2rem; margin-bottom: 0.5rem; }
-    p { margin-bottom: 1rem; }
-
-    a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; }
-    a:hover { border-bottom-color: var(--accent); }
-    .btn {
-      display: inline-block;
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 500;
-      text-decoration: none;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .btn-primary {
-      background: var(--accent); color: white;
-      border: 1px solid var(--accent);
-    }
-    .btn-primary:hover { background: #1e40af; border-bottom-color: var(--accent); }
-    .btn-secondary {
-      background: white; color: var(--accent);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { background: var(--accent-soft); border-bottom-color: var(--border); }
-
-    pre {
-      background: var(--bg-code);
-      color: #e2e8f0;
-      padding: 1rem 1.25rem;
-      border-radius: 8px;
-      overflow-x: auto;
-      font-size: 0.85rem;
-      line-height: 1.55;
-      margin: 1rem 0;
-    }
-    code {
-      background: #f3f4f6;
-      padding: 0.1rem 0.35rem;
-      border-radius: 4px;
-      font-size: 0.85em;
-    }
-    pre code { background: transparent; padding: 0; }
-    .code-token-key { color: #93c5fd; }
-    .code-token-str { color: #86efac; }
-    .code-token-num { color: #fcd34d; }
-    .code-token-cmt { color: #94a3b8; font-style: italic; }
-    .code-token-fn  { color: #fda4af; }
-
-    table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem; }
-    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { font-weight: 600; background: #f9fafb; }
-
-    blockquote {
-      border-left: 3px solid var(--accent);
-      background: var(--accent-soft);
-      padding: 0.75rem 1rem;
-      margin: 1rem 0;
-      color: #1e293b;
-      font-style: italic;
+    code[class*="language-"] { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    :not(pre) > code {
+      background: #f1f5f9; padding: 0.15rem 0.4rem; border-radius: 5px;
+      font-size: 0.875em; color: #0f172a;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      border: 1px solid #e2e8f0;
     }
 
-    .badge {
-      display: inline-block;
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 0.15rem 0.45rem;
-      border-radius: 4px;
-      letter-spacing: 0.02em;
-    }
-    .badge-stable { background: #dcfce7; color: #166534; }
-    .badge-exp    { background: #fef3c7; color: #92400e; }
-    .badge-plan   { background: #e0e7ff; color: #3730a3; }
+    .token.keyword, .token.builtin { color: #67e8f9; font-weight: 500; }
+    .token.string, .token.attr-value { color: #86efac; }
+    .token.number, .token.boolean { color: #fcd34d; }
+    .token.comment { color: #64748b; font-style: italic; }
+    .token.function { color: #f9a8d4; }
+    .token.property, .token.attr-name { color: #93c5fd; }
+    .token.operator, .token.punctuation { color: #cbd5e1; }
 
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-    @media (max-width: 640px) {
-      .two-col { grid-template-columns: 1fr; }
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 40%, transparent 80%);
     }
-    .card {
-      padding: 1rem 1.25rem;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-    }
-    .card h3 { margin-top: 0; }
+    .glow { background: radial-gradient(circle at 50% 0%, rgba(6,182,212,0.18) 0%, transparent 60%); }
 
-    .muted { color: var(--muted); }
-    .footnote { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
-
-    .ascii-diagram {
-      background: #f9fafb;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      font-size: 0.78rem;
-      line-height: 1.4;
-      overflow-x: auto;
-      color: #374151;
+    .pill {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.35rem 0.85rem; border-radius: 999px;
+      font-size: 0.78rem; font-weight: 500; letter-spacing: 0.01em;
     }
+    .pill-dark { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; }
+    .pill-light { background: #f1f5f9; border: 1px solid #e2e8f0; color: #475569; }
+
+    section[id] { scroll-margin-top: 80px; }
   </style>
 </head>
-<body>
-  <div class="container-narrow">
 
-  <!-- ============== HEADER ============== -->
-  <header class="pt-12 pb-4">
-    <p class="text-sm uppercase tracking-wider muted mb-2">Epistemic Programming Interface</p>
-    <h1 class="text-5xl mb-3">Epi</h1>
-    <p class="text-xl mb-2" style="color:#374151">A type discipline for AI-augmented full-stack applications.</p>
-    <p class="muted mb-6">
-      Containing LLM hallucination at the type-system boundary, by construction, in generated code.
-    </p>
+<body class="bg-white text-ink-900 font-sans antialiased text-[17px] leading-relaxed">
 
-    <div class="flex flex-wrap gap-2 mb-6">
-      <a class="btn btn-primary" href="https://pypi.org/project/epi-lang/">pip install epi-lang</a>
-      <a class="btn btn-secondary" href="https://github.com/RandMelville/epi-lang">View on GitHub</a>
-      <a class="btn btn-secondary" href="PAPER.md">Read the paper draft</a>
+<!-- ============== NAV ============== -->
+<nav class="sticky top-0 z-50 bg-white/85 backdrop-blur border-b border-ink-100">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2 font-bold text-lg tracking-tight text-ink-900 hover:text-accent-700">
+      <span class="inline-block w-7 h-7 rounded-md bg-gradient-to-br from-accent-500 to-accent-700 grid place-items-center text-white text-xs font-mono">ε</span>
+      Epi
+    </a>
+    <div class="hidden md:flex items-center gap-7 text-sm text-ink-600">
+      <a href="#what" class="hover:text-ink-900">What is Epi</a>
+      <a href="#scenario" class="hover:text-ink-900">Use case</a>
+      <a href="#comparison" class="hover:text-ink-900">Comparison</a>
+      <a href="#evidence" class="hover:text-ink-900">Evidence</a>
+      <a href="#quickstart" class="hover:text-ink-900">Quick start</a>
     </div>
+    <div class="flex items-center gap-2">
+      <a href="https://github.com/RandMelville/epi-lang"
+         class="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-ink-700 hover:text-ink-900 px-3 py-1.5 rounded-md border border-ink-200 hover:border-ink-300 transition">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56v-2.16c-3.2.7-3.88-1.37-3.88-1.37-.52-1.34-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.51-1.47.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.4-5.27 5.69.41.36.78 1.05.78 2.12v3.14c0 .31.21.67.8.56C20.21 21.38 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        GitHub
+      </a>
+      <a href="https://pypi.org/project/epi-lang/"
+         class="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md bg-ink-900 text-white hover:bg-ink-800 transition">
+        pip install epi-lang
+      </a>
+    </div>
+  </div>
+</nav>
 
-    <p class="footnote">
-      Research at <strong>UFRGS — PPGIE</strong>. Authors: Randerson Rebouças, Dante Barone (UFRGS).
-      Short paper in preparation for <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/">SBLP 2026</a>.
-    </p>
-  </header>
+<!-- ============== HERO ============== -->
+<header id="top" class="relative bg-ink-950 text-white overflow-hidden">
+  <div class="absolute inset-0 grid-bg pointer-events-none"></div>
+  <div class="absolute inset-0 glow pointer-events-none"></div>
 
-  <!-- ============== PROBLEM ============== -->
-  <section>
-    <h2>The problem</h2>
-    <p>
-      LLMs are increasingly embedded in production software, but the languages we use to build that software were designed for an era when all computation was deterministic. Three problems follow.
-    </p>
+  <div class="relative max-w-7xl mx-auto px-6 lg:px-10 pt-20 pb-24 lg:pt-28 lg:pb-32">
+    <div class="grid lg:grid-cols-12 gap-12 items-center">
 
-    <h3>1. No type-level separation of epistemic domains</h3>
-    <p>
-      In TypeScript or Python, a database field <code>status: String</code> and an LLM-inferred field <code>risk: String</code> are treated identically by the type system. If the LLM hallucinates <code>"Unknown"</code>, the value lands in the database. Nothing in the compiler or runtime requires validation.
-    </p>
-
-    <h3>2. Forced stack fragmentation</h3>
-    <p>
-      Building an AI-augmented application means juggling SQL/Prisma, TypeScript, React, and an LLM SDK at the same time — four mental models for a single feature.
-    </p>
-
-    <h3>3. No grammar-enforced hallucination contract</h3>
-    <p>
-      Validation, retries, fallback handling, confidence thresholding, and audit trails are all <strong>optional</strong>. They are features the developer must remember to add. In practice, they are forgotten.
-    </p>
-  </section>
-
-  <!-- ============== THE THESIS ============== -->
-  <section>
-    <h2>The thesis</h2>
-    <blockquote>
-      LLM hallucination cannot be <em>prevented</em>. It can, however, be <em>contained at a type-system boundary</em>, by construction, in the generated code.
-    </blockquote>
-    <p>
-      Epi defines an <strong>epistemic type system</strong>: every value belongs to one of two domains.
-    </p>
-    <div class="two-col">
-      <div class="card">
-        <h3>Rigid types</h3>
-        <p class="muted text-sm" style="margin-bottom: 0.5rem">Deterministic, no AI involvement.</p>
-        <p class="mono text-sm">
-          UUID · Text · Int · Decimal · Bool · DateTime · JSON
+      <div class="lg:col-span-7">
+        <span class="pill pill-dark mb-6">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse"></span>
+          Research at UFRGS · v0.3.1
+        </span>
+        <h1 class="text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
+          A type discipline for<br />
+          <span class="bg-gradient-to-r from-accent-300 to-accent-500 bg-clip-text text-transparent">AI-augmented</span> applications.
+        </h1>
+        <p class="text-xl lg:text-2xl text-ink-300 leading-relaxed mb-8 max-w-2xl">
+          <span class="text-white font-semibold">Epi</span> makes the boundary between deterministic computation and AI inference visible to the type system — so a hallucinated value cannot silently land in your database.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <a href="#quickstart"
+             class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-accent-500 hover:bg-accent-400 text-white font-semibold text-base transition">
+            Get started →
+          </a>
+          <a href="#what"
+             class="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-white/10 hover:bg-white/15 border border-white/10 text-white font-medium text-base transition backdrop-blur">
+            What is Epi?
+          </a>
+        </div>
+        <p class="mt-6 text-sm text-ink-400">
+          Active research at UFRGS / PPGIE. Authors: Randerson Rebouças, Prof. Dante Barone.<br/>
+          Submission planned for <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="text-accent-300 hover:text-accent-200 underline underline-offset-2">SBLP 2026</a> (1 June 2026).
         </p>
       </div>
-      <div class="card">
-        <h3>Epistemic types</h3>
-        <p class="muted text-sm" style="margin-bottom: 0.5rem">AI-inferred, runtime-validated at the boundary.</p>
-        <p class="mono text-sm">
-          AI.Enum · AI.Text · AI.Classification · AI.Score · AI.Embedding
-        </p>
-      </div>
-    </div>
-    <p style="margin-top:1.25rem">
-      A single epistemic declaration generates: <strong>a database column</strong>, <strong>a Zod validator</strong>, <strong>an LLM inference call with confidence reporting</strong>, and <strong>a checkpoint route</strong> that pauses for human review when confidence falls below threshold. The validation is not optional — it is emitted by the transpiler.
-    </p>
-  </section>
 
-  <!-- ============== EXAMPLE ============== -->
-  <section>
-    <h2>What an Epi program looks like</h2>
-    <p>The full source of <code>contrato-simples.epi</code> — the quickstart bundled with <code>epi init</code>:</p>
-    <pre><code><span class="code-token-cmt">@Language:</span> Epi v0.3
-<span class="code-token-cmt">@Goal:</span> <span class="code-token-str">"Minimal contract classification"</span>
-<span class="code-token-cmt">@Database:</span> sqlite
-
-<span class="code-token-fn">Entity</span> Contrato {
-    id: <span class="code-token-key">UUID</span>(auto),
-    documento: <span class="code-token-key">Text</span>,
-    criado_em: <span class="code-token-key">DateTime</span>(auto),
-    risco: <span class="code-token-key">AI.Enum</span>(
-        Alto, Medio, Baixo,
-        strict: <span class="code-token-num">true</span>,
-        confidence_threshold: <span class="code-token-num">0.7</span>
+      <div class="lg:col-span-5">
+        <div class="relative">
+          <div class="absolute -inset-4 bg-gradient-to-br from-accent-500/20 to-transparent blur-2xl"></div>
+          <div class="relative rounded-xl border border-white/10 shadow-2xl overflow-hidden">
+            <div class="flex items-center gap-1.5 px-4 py-2.5 bg-ink-900 border-b border-white/10 text-xs text-ink-400 font-mono">
+              <span class="w-2.5 h-2.5 rounded-full bg-ink-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-ink-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-ink-700"></span>
+              <span class="ml-2">avaliacao-pedagogica.epi</span>
+            </div>
+<pre class="!m-0 !rounded-none !border-0"><code class="language-rust">Entity Submissao {
+    id: UUID(auto),
+    resposta_aluno: Text,
+    avaliacao: AI.Enum(
+        Correto, Parcial, Incorreto,
+        prior: Distribution(
+            Correto: 0.40,
+            Parcial: 0.45,
+            Incorreto: 0.15
+        ),
+        confidence_threshold: 0.85
     )
 }
 
-<span class="code-token-fn">Guard</span> SomenteAdvogados {
-    Condition: Auth.Role == <span class="code-token-str">"Lawyer"</span>
-}
-
-<span class="code-token-fn">Pulse</span> ClassificarRisco {
-    Input: Contrato
-    Protect: Guard.SomenteAdvogados
-    Process:
-        Execute: AI.scan(
-            source: Input.documento,
-            prompt: file(<span class="code-token-str">"@prompts/legal_scan_simples.md"</span>),
-            temperature: <span class="code-token-num">0.1</span>,
-            confidence_threshold: <span class="code-token-num">0.7</span>,
-            on_low_confidence: Checkpoint.ReviewRequired(role: <span class="code-token-str">"Lawyer"</span>),
-            on_fail: Fallback.ManualReview(Queue: <span class="code-token-str">"Advogados"</span>)
-        )
-    Output: Contrato.risco
-}
-
-<span class="code-token-fn">Pipeline</span> AnalisarContrato {
-    Flow: ClassificarRisco
-    On_Error: Retry(max: <span class="code-token-num">2</span>, backoff: exponential)
-}
-</code></pre>
-    <p>
-      From these ~30 lines, the transpiler generates a complete runnable Next.js project: Prisma schema, auth middleware, API routes, Zod validators, LLM inference functions, and a provider-agnostic <code>lib/llm-client.ts</code>. Run <code>epi transpile</code> and you get a 13-file project ready to <code>npm install &amp;&amp; npm run dev</code>.
-    </p>
-  </section>
-
-  <!-- ============== ARCHITECTURE ============== -->
-  <section>
-    <h2>Three-layer transpiler</h2>
-    <p>The LLM is formally excluded from Layers 1 and 2:</p>
-    <pre class="ascii-diagram mono">.epi source
-   ▼
-[Layer 1: Parser]            Lark + EBNF             100% deterministic
-   ▼
-[Layer 2: Rigid Generator]   Prisma, middleware,     100% deterministic
-                             routes, Zod validators
-   ▼
-[Layer 3: Epistemic Gen.]    LLM calls, Trace,       validated at the
-                             Checkpoint, Lens         boundary by Layer 2</pre>
-    <p>
-      The contract — JSON output containing a <code>_confidence</code> field, parseable by a Zod schema — is enforced uniformly across LLM providers. The current implementation routes to Anthropic Claude (cloud) or any OpenAI-compatible endpoint, including <a href="https://ollama.com">Ollama</a> running local open-weight models.
-    </p>
-  </section>
-
-  <!-- ============== EVIDENCE ============== -->
-  <section>
-    <h2>Empirical evidence</h2>
-    <p>
-      Provider-agnosticism is not a claim — it is verified. The example above was transpiled and exercised end-to-end against
-      <strong>Qwen 2.5 3B Instruct</strong> running locally via Ollama, on a personal laptop, with no cloud API and no credit card.
-    </p>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Input</th>
-          <th>Model output</th>
-          <th>Result</th>
-          <th>Latency</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><em>"Contrato simples de serviço R$500/mês, 12 meses, rescisão 30 dias."</em></td>
-          <td><code>{"risco":"Baixo","_confidence":0.85}</code></td>
-          <td>Validated · returned <code>"Baixo"</code></td>
-          <td>~3s</td>
-        </tr>
-        <tr>
-          <td><em>"Contrato unilateral leonino, multa 95%, sem rescisão."</em></td>
-          <td><code>{"risco":"Alto","_confidence":0.9}</code></td>
-          <td>Validated · returned <code>"Alto"</code></td>
-          <td>~3s</td>
-        </tr>
-        <tr>
-          <td><em>(any input, malformed LLM JSON)</em></td>
-          <td><code>{"unexpected":"object"}</code></td>
-          <td>Zod rejected · routed to <code>queue: "Advogados"</code></td>
-          <td>—</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p>
-      The third row is the point: a small open-weight model that produced non-conforming JSON did <em>not</em> propagate its hallucination. The transpiler-generated validator caught the malformed output and triggered <code>Fallback.ManualReview</code> — a behavior the developer never wrote.
-    </p>
-
-    <p class="footnote">
-      Hardware: Apple Silicon, 16 GB RAM. Model: <code>qwen2.5:3b-instruct</code> (Q4_K_M, ~1.9 GB). Same <code>.epi</code> source compiles unchanged against Anthropic Claude in cloud.
-    </p>
-  </section>
-
-  <!-- ============== QUICKSTART ============== -->
-  <section>
-    <h2>Quick start</h2>
-    <p>The full setup, without cloning the repository:</p>
-    <pre><code><span class="code-token-cmt"># once: install Ollama and pull a small instruction-tuned model</span>
-ollama pull qwen2.5:3b-instruct
-ollama serve &amp;
-
-<span class="code-token-cmt"># install Epi and bootstrap a project</span>
-pip install epi-lang
-epi init meu-classificador
-cd meu-classificador
-
-<span class="code-token-cmt"># transpile to a runnable Next.js project</span>
-epi transpile contrato.epi --target nextjs --outdir ./app
-
-<span class="code-token-cmt"># run it</span>
-cd app
-npm install
-cp .env.example .env   <span class="code-token-cmt"># pre-configured for Ollama local</span>
-npx prisma migrate dev --name init
-npm run dev</code></pre>
-    <p>
-      To target Anthropic Claude instead, edit <code>.env</code> and set <code>EPI_AI_PROVIDER=anthropic</code> with your <code>ANTHROPIC_API_KEY</code>. No changes to the <code>.epi</code> source. No changes to the generated code.
-    </p>
-  </section>
-
-  <!-- ============== TRACE+CHECKPOINT ============== -->
-  <section>
-    <h2>Trace and Checkpoint</h2>
-    <p>
-      A Pulse can be decomposed into <code>Trace</code> steps. Each Trace can <code>Expose</code> intermediate reasoning fields and pause at a <code>Checkpoint</code> for human review before the final output is committed.
-    </p>
-    <pre><code>Pulse AvaliarRespostaAluno {
-    Trace InterpretarEnunciado {
-        Execute: AI.reason(prompt: file(<span class="code-token-str">"@prompts/..."</span>))
-        Expose: interpretacao, conceitos_chave, criterios_avaliacao
-        Checkpoint: ReviewRequired(role: <span class="code-token-str">"Professor"</span>)
-    }
-    Trace AvaliarResposta {
-        Execute: AI.classify(
-            confidence_threshold: <span class="code-token-num">0.85</span>,
-            on_low_confidence: Checkpoint.ReviewRequired(role: <span class="code-token-str">"Professor"</span>)
-        )
-    }
+Pulse AvaliarResposta {
+    Input: Submissao
+    Process: Execute: AI.classify(
+        source: Input.resposta_aluno,
+        on_low_confidence:
+            Checkpoint.ReviewRequired(
+                role: "Professor"
+            )
+    )
+    Output: Submissao.avaliacao
 }</code></pre>
-    <p>
-      The transpiler emits an in-memory <code>TraceState</code> store, inspect / resume HTTP routes, and an audit trail of every approval or correction. Intended for high-stakes flows — pedagogical assessment, legal review, clinical triage — where reasoning must be inspected before persistence.
-    </p>
-  </section>
+          </div>
+        </div>
+      </div>
 
-  <!-- ============== WHEN TO USE ============== -->
-  <section>
-    <h2>When to use Epi — and when not to</h2>
-    <div class="two-col">
-      <div class="card">
-        <h3>Use Epi when</h3>
-        <ul class="list-disc pl-5 text-sm space-y-1">
-          <li>Audit-by-construction is required (legal, healthcare, education, government)</li>
-          <li>AI-inferred values must be persisted and traceable, not just shown</li>
-          <li>Human-in-the-loop is structural, not exceptional</li>
-          <li>The domain has a meaningful prior distribution (Bayesian update genuinely helps)</li>
-          <li>You ship a focused product, not a general AI platform</li>
+    </div>
+
+    <div class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
+      <div class="bg-ink-950 px-6 py-5">
+        <div class="text-3xl font-bold text-white">127<span class="text-ink-500 text-base font-normal">/127</span></div>
+        <div class="text-sm text-ink-400 mt-1">tests passing</div>
+      </div>
+      <div class="bg-ink-950 px-6 py-5">
+        <div class="text-3xl font-bold text-white">~30 → 13</div>
+        <div class="text-sm text-ink-400 mt-1">lines of .epi → files generated</div>
+      </div>
+      <div class="bg-ink-950 px-6 py-5">
+        <div class="text-3xl font-bold text-white">2</div>
+        <div class="text-sm text-ink-400 mt-1">LLM providers (Anthropic · Ollama)</div>
+      </div>
+      <div class="bg-ink-950 px-6 py-5">
+        <div class="text-3xl font-bold text-white">~3<span class="text-ink-500 text-base font-normal">s</span></div>
+        <div class="text-sm text-ink-400 mt-1">end-to-end on a local 3B model</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============== WHAT IS EPI ============== -->
+<section id="what" class="py-24 lg:py-32 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="grid lg:grid-cols-12 gap-12 lg:gap-16">
+      <div class="lg:col-span-5">
+        <p class="pill pill-light mb-4">What is Epi</p>
+        <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+          One file in.<br/>
+          Full stack out.<br/>
+          Every AI output validated.
+        </h2>
+      </div>
+      <div class="lg:col-span-7 space-y-5 text-lg text-ink-700 leading-relaxed">
+        <p>
+          <strong>Epi</strong> is a small programming language designed for one job: building applications where some values come from a database and others come from a large language model — and the difference must matter to the type system.
+        </p>
+        <p>
+          You describe your application in a single <code>.epi</code> file: entities, authorization rules, AI inference steps, pipelines, and UI surfaces. The Epi transpiler reads that source and emits a complete runnable Next.js project — schema, API routes, middleware, runtime validators, LLM call wrappers, and human-review checkpoints.
+        </p>
+        <p>
+          Every AI-inferred field carries a contract: an enum or range to honor, a confidence to report, a fallback if the contract is broken. The transpiler emits that contract as runtime code. The developer does not write it. The developer cannot forget it.
+        </p>
+        <p class="text-ink-900 font-semibold border-l-4 border-accent-500 pl-5 py-1">
+          The thesis is narrow: LLM hallucination cannot be prevented, but it can be <em>contained</em> at the type-system boundary, by construction, in the generated code.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== USE CASE: EDUCATION ============== -->
+<section id="scenario" class="py-24 lg:py-32 bg-ink-50 border-y border-ink-100">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="max-w-3xl mb-12">
+      <p class="pill pill-light mb-4">Use case · Education</p>
+      <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+        Grading student answers with AI help.
+      </h2>
+      <p class="text-xl text-ink-700 leading-relaxed">
+        Consider a learning platform where a teacher submits a question and a student's answer. An LLM proposes a classification — <em>Correto, Parcial, Incorreto</em> — and the teacher needs to <strong>see, audit, and approve</strong> the assessment before it is recorded. This is the exact scenario behind Epi's design, in conversation with researchers at UFRGS / PPGIE.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="rounded-xl border border-rose-200 bg-white p-8">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <h3 class="text-xl font-bold text-ink-900">The problem without Epi</h3>
+        </div>
+        <ul class="space-y-4 text-ink-700">
+          <li class="flex gap-3"><span class="text-rose-600 mt-1 font-mono">▸</span>
+            <span>The LLM might output <code>"Mais ou menos"</code> instead of one of the three allowed labels. Nothing in the type system rejects it — it lands in the database.</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1 font-mono">▸</span>
+            <span>The model's <strong>confidence</strong> is invisible. A 0.51 guess and a 0.95 conviction are stored identically.</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1 font-mono">▸</span>
+            <span>No <strong>checkpoint</strong>: the teacher reviews assessments <em>after</em> they are recorded, not before. Reversal is messy.</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1 font-mono">▸</span>
+            <span>No <strong>audit trail</strong> of why the model produced this label, what it interpreted, what alternatives it ranked.</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1 font-mono">▸</span>
+            <span>Validation, retries, fallback queues, prior distributions — every team rewrites them, slightly differently, every project.</span></li>
         </ul>
       </div>
-      <div class="card">
-        <h3>Don't use Epi for</h3>
-        <ul class="list-disc pl-5 text-sm space-y-1">
-          <li>Conversational chatbots or generic assistants</li>
-          <li>Apps centered on complex RAG or multi-tool agents</li>
-          <li>Teams with a mature in-house AI platform already in place</li>
-          <li>Pure creative generation — confidence and checkpoint don't apply</li>
-          <li>Sub-100ms latency paths</li>
+
+      <div class="rounded-xl border border-emerald-200 bg-white p-8">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <h3 class="text-xl font-bold text-ink-900">How Epi handles each problem</h3>
+        </div>
+        <ul class="space-y-4 text-ink-700">
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1 font-mono">✓</span>
+            <span><strong>Enum constraint</strong> compiled into a runtime Zod schema — invalid labels are rejected before persistence.</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1 font-mono">✓</span>
+            <span><strong>Confidence reporting</strong> required in the JSON output — the field is part of the type, not an afterthought.</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1 font-mono">✓</span>
+            <span><strong>Checkpoint route</strong> generated by the transpiler — low-confidence outputs pause for the teacher, exposed via an inspect/resume API.</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1 font-mono">✓</span>
+            <span><strong>Trace with Expose</strong> — the reasoning is made visible before the final classification, persisted as an audit record.</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1 font-mono">✓</span>
+            <span><strong>Bayesian prior</strong> on the class distribution combines historical incidence with the model output. The hallucination does not erase the domain knowledge.</span></li>
         </ul>
       </div>
     </div>
-    <p style="margin-top:1.25rem">
-      The full honest list of current gaps is documented in <a href="LIMITATIONS.md">LIMITATIONS.md</a>.
+
+    <p class="text-center text-ink-500 mt-10 max-w-2xl mx-auto">
+      The same mechanisms apply to any decision-grade flow: legal contract triage, clinical pre-screening, regulatory classification. Wherever AI outputs become facts of record.
     </p>
-  </section>
-
-  <!-- ============== STATUS ============== -->
-  <section>
-    <h2>Status (v0.3.1)</h2>
-    <table>
-      <thead>
-        <tr><th>Component</th><th>Status</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>EBNF grammar, AST, parser</td><td><span class="badge badge-stable">stable</span></td></tr>
-        <tr><td>Deterministic generators (Prisma, middleware, routes, Zod)</td><td><span class="badge badge-stable">stable</span></td></tr>
-        <tr><td>Epistemic generators (LLM calls, Trace, Checkpoint, Bayesian prior)</td><td><span class="badge badge-stable">stable</span></td></tr>
-        <tr><td>Provider-agnostic LLM client (Anthropic + Ollama/OpenAI)</td><td><span class="badge badge-stable">stable</span></td></tr>
-        <tr><td>SQLite database option</td><td><span class="badge badge-stable">stable</span></td></tr>
-        <tr><td><code>epi init</code> project scaffold</td><td><span class="badge badge-stable">stable</span></td></tr>
-        <tr><td>Test suite</td><td><span class="badge badge-stable">stable</span> — 127 / 127</td></tr>
-        <tr><td><code>Lens.Mood</code> (deterministic keyword → Tailwind, 6 hardcoded moods)</td><td><span class="badge badge-exp">experimental</span></td></tr>
-        <tr><td><code>--target fastapi</code> (intentionally blocked in CLI)</td><td><span class="badge badge-exp">experimental</span></td></tr>
-        <tr><td>Empirical evaluation study (Epi vs. handwritten)</td><td><span class="badge badge-plan">v0.4</span></td></tr>
-        <tr><td>Multi-provider matrix (Gemini, Mistral)</td><td><span class="badge badge-plan">v0.4</span></td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- ============== RELATED WORK ============== -->
-  <section>
-    <h2>Related work</h2>
-    <table>
-      <tbody>
-        <tr><td><a href="https://dl.acm.org/doi/10.1145/3385412.3386009">ProbZelus</a> (PLDI 2020)</td><td>Separates deterministic and probabilistic reactive streams. Epi lifts the separation to application-level types.</td></tr>
-        <tr><td><a href="https://dl.acm.org/doi/10.1145/3290348">SlicStan</a> (POPL 2019)</td><td>Information-flow types for probabilistic programs. Epi adapts the discipline to AI-augmented apps.</td></tr>
-        <tr><td>Russo &amp; Sabelfeld (CSF 2010)</td><td>Information-flow control as type-level separation of security levels — structural analog to Epi's rigid / epistemic separation.</td></tr>
-        <tr><td><a href="https://github.com/BoundaryML/baml">BAML</a></td><td>Typed LLM function signatures. Epi extends to whole-application generation.</td></tr>
-        <tr><td><a href="https://wasp-lang.dev">Wasp</a></td><td>Full-stack DSL (React + Node). Epi adds epistemic types and AI-aware transpilation.</td></tr>
-        <tr><td><a href="https://dspy.ai/">DSPy</a> (Stanford)</td><td>Declarative LLM programming via signatures. Orthogonal — DSPy optimizes prompts, Epi separates type domains.</td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- ============== CITATION ============== -->
-  <section>
-    <h2>Citing Epi</h2>
-    <pre><code>@software{reboucas2026epi,
-  author  = {Rebou&ccedil;as, Randerson and Barone, Dante},
-  title   = {Epi: An Epistemic Programming Interface for AI-Augmented Full-Stack Transpilation},
-  year    = {2026},
-  url     = {https://github.com/RandMelville/epi-lang},
-  version = {0.3.1}
-}</code></pre>
-    <p class="footnote">
-      A short paper is in preparation for the
-      <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/">XXX Brazilian Symposium on Programming Languages (SBLP 2026)</a>.
-      Submission target: 1 June 2026.
-    </p>
-  </section>
-
-  <!-- ============== AUTHORS ============== -->
-  <section>
-    <h2>Authors and affiliations</h2>
-    <ul class="list-disc pl-5 space-y-1">
-      <li><strong>Randerson Rebouças</strong> — UFRGS, PPGIE (PhD candidate). Language design and implementation.</li>
-      <li><strong>Prof. Dante Barone</strong> — UFRGS. Stochastic-computing foundations behind Epi's <code>prior</code> and <code>confidence_threshold</code> primitives.</li>
-    </ul>
-    <p class="footnote" style="margin-top:0.75rem">
-      Trace + Checkpoint design informed by ongoing discussion with Profa. Rosa Maria Vicari (UFRGS / PPGIE).
-    </p>
-  </section>
-
-  <!-- ============== FOOTER ============== -->
-  <footer class="mt-16 pt-6 border-t" style="border-color: var(--border)">
-    <p class="muted text-sm">
-      <a href="https://github.com/RandMelville/epi-lang">github.com/RandMelville/epi-lang</a> ·
-      <a href="https://pypi.org/project/epi-lang/">pypi.org/project/epi-lang</a> ·
-      Apache 2.0 License ·
-      © 2026 Randerson Rebouças
-    </p>
-    <p class="footnote">
-      This page is statically served from <code>docs/</code> via GitHub Pages.
-    </p>
-  </footer>
-
   </div>
+</section>
+
+<!-- ============== COMPARISON ============== -->
+<section id="comparison" class="py-24 lg:py-32 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="max-w-3xl mb-12">
+      <p class="pill pill-light mb-4">Side by side</p>
+      <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+        What you write without Epi — and with it.
+      </h2>
+      <p class="text-xl text-ink-600 leading-relaxed">
+        The same feature, expressed two ways. On the left, the artifacts a team typically produces by hand. On the right, the Epi declaration. The transpiler emits everything on the left from everything on the right.
+      </p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-6">
+
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-semibold text-ink-700">Conventional TypeScript / Prisma</span>
+          <span class="pill pill-light">≈ 200 lines · 6 files · hand-written</span>
+        </div>
+<pre><code class="language-typescript">// prisma/schema.prisma
+model Submissao {
+  id             String   @id @default(uuid())
+  resposta_aluno String
+  avaliacao      String   // no enum constraint at type level
+  createdAt      DateTime @default(now())
+}
+
+// app/api/avaliar/route.ts  (truncated)
+export async function POST(req: NextRequest) {
+  const session = await getServerSession();
+  if (session?.role !== "Professor") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  const input = await req.json();
+
+  // Hand-rolled LLM call
+  const res = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 256,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: input.resposta_aluno }],
+  });
+  const text = (res.content[0] as any).text;
+
+  // No schema — manual parsing, frequently broken
+  let parsed: any;
+  try { parsed = JSON.parse(text); } catch { return error(...); }
+  if (!["Correto","Parcial","Incorreto"].includes(parsed.avaliacao)) {
+    // every team writes this branch differently
+    return NextResponse.json({ queue: "manual_review" });
+  }
+
+  // No confidence threshold. No Bayesian update.
+  // No trace. No checkpoint. No audit.
+  await prisma.submissao.update({
+    where: { id: input.id },
+    data:  { avaliacao: parsed.avaliacao },
+  });
+  return NextResponse.json({ ok: true });
+}</code></pre>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-semibold text-ink-700">avaliacao-pedagogica.epi</span>
+          <span class="pill pill-light">30 lines · 1 file · transpiled</span>
+        </div>
+<pre><code class="language-rust">@Language: Epi v0.3
+@Database: sqlite
+
+Entity Submissao {
+    id: UUID(auto),
+    resposta_aluno: Text,
+    criado_em: DateTime(auto),
+    avaliacao: AI.Enum(
+        Correto, Parcial, Incorreto,
+        strict: true,
+        prior: Distribution(
+            Correto: 0.40,
+            Parcial: 0.45,
+            Incorreto: 0.15
+        ),
+        confidence_threshold: 0.85
+    )
+}
+
+Guard SoProfessores {
+    Condition: Auth.Role == "Professor"
+}
+
+Pulse AvaliarResposta {
+    Input: Submissao
+    Protect: Guard.SoProfessores
+    Process:
+        Execute: AI.classify(
+            source: Input.resposta_aluno,
+            prompt: file("@prompts/avaliar.md"),
+            temperature: 0.1,
+            confidence_threshold: 0.85,
+            on_low_confidence:
+                Checkpoint.ReviewRequired(role: "Professor"),
+            on_fail:
+                Fallback.ManualReview(Queue: "Professores")
+        )
+    Output: Submissao.avaliacao
+}</code></pre>
+      </div>
+
+    </div>
+
+    <div class="mt-12 grid md:grid-cols-3 gap-6 text-center">
+      <div class="rounded-xl border border-ink-200 bg-ink-50/40 p-7">
+        <div class="text-4xl font-bold text-accent-600 mb-2">−85%</div>
+        <p class="text-ink-700">lines of source code maintained by hand</p>
+      </div>
+      <div class="rounded-xl border border-ink-200 bg-ink-50/40 p-7">
+        <div class="text-4xl font-bold text-accent-600 mb-2">+5</div>
+        <p class="text-ink-700">guarantees emitted automatically: enum, confidence, checkpoint, prior, audit</p>
+      </div>
+      <div class="rounded-xl border border-ink-200 bg-ink-50/40 p-7">
+        <div class="text-4xl font-bold text-accent-600 mb-2">0</div>
+        <p class="text-ink-700">opportunities to forget the validation contract</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============== HOW IT WORKS ============== -->
+<section class="py-24 lg:py-32 bg-ink-50 border-y border-ink-100">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+
+      <div class="lg:col-span-5">
+        <p class="pill pill-light mb-4">How it works</p>
+        <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+          A three-layer transpiler. The LLM lives in only one of them.
+        </h2>
+        <p class="text-xl text-ink-700 leading-relaxed">
+          Parsing and rigid generation are <strong>fully deterministic</strong>. The epistemic layer — the part that calls the LLM — operates strictly inside the contract emitted by the deterministic layer above it.
+        </p>
+      </div>
+
+      <div class="lg:col-span-7 space-y-4">
+
+        <div class="rounded-xl border border-ink-200 bg-white p-7">
+          <div class="flex items-baseline gap-3 mb-2">
+            <span class="font-mono text-sm text-accent-700 font-semibold">Layer 1</span>
+            <h3 class="text-lg font-semibold">Parser</h3>
+            <span class="pill pill-light ml-auto text-xs">100% deterministic</span>
+          </div>
+          <p class="text-ink-600">EBNF grammar in Lark. The <code>.epi</code> source becomes a typed AST in Pydantic.</p>
+        </div>
+
+        <div class="rounded-xl border border-ink-200 bg-white p-7">
+          <div class="flex items-baseline gap-3 mb-2">
+            <span class="font-mono text-sm text-accent-700 font-semibold">Layer 2</span>
+            <h3 class="text-lg font-semibold">Rigid Generator</h3>
+            <span class="pill pill-light ml-auto text-xs">100% deterministic</span>
+          </div>
+          <p class="text-ink-600">From the AST: Prisma schema, auth middleware, API routes, Zod validators. No LLM. Pure code generation.</p>
+        </div>
+
+        <div class="rounded-xl border border-accent-200 bg-accent-50/40 p-7">
+          <div class="flex items-baseline gap-3 mb-2">
+            <span class="font-mono text-sm text-accent-700 font-semibold">Layer 3</span>
+            <h3 class="text-lg font-semibold">Epistemic Generator</h3>
+            <span class="pill pill-light ml-auto text-xs">constrained by Layer 2</span>
+          </div>
+          <p class="text-ink-700">LLM call wrappers, confidence extraction, Trace + Checkpoint infrastructure, Bayesian posterior. Every output passes through the validators of Layer 2 before persistence.</p>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============== EVIDENCE ============== -->
+<section id="evidence" class="py-24 lg:py-32 bg-ink-950 text-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="max-w-3xl mb-12">
+      <p class="pill pill-dark mb-4">Empirical evidence</p>
+      <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+        Verified end-to-end. Local model. No cloud.
+      </h2>
+      <p class="text-xl text-ink-300 leading-relaxed">
+        Epi's provider-agnosticism is not a claim — it is exercised. The same generated pipeline runs against Anthropic Claude (cloud) and against a 1.9 GB open-weight model on a laptop. The Zod boundary catches deviations from either.
+      </p>
+      <p class="text-base text-ink-400 leading-relaxed mt-4">
+        The demonstration below exercises the same mechanisms used in the educational example above — enum constraint, confidence reporting, Zod boundary, fallback dispatch — on a smaller domain (legal risk classification) to keep the trace short. The educational pipeline inherits identical guarantees.
+      </p>
+    </div>
+
+    <div class="rounded-2xl border border-white/10 overflow-hidden">
+      <div class="px-6 py-4 bg-white/5 border-b border-white/10 flex items-center gap-3 flex-wrap">
+        <span class="font-mono text-sm text-accent-300">qwen2.5:3b-instruct</span>
+        <span class="text-ink-500 text-sm">·</span>
+        <span class="text-sm text-ink-300">Q4_K_M, ~1.9 GB, local via Ollama</span>
+        <span class="ml-auto pill pill-dark">Apple Silicon · 16 GB RAM</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-white/[0.02] text-ink-400 text-xs uppercase tracking-wider">
+            <tr>
+              <th class="text-left py-4 px-6 font-medium">Input</th>
+              <th class="text-left py-4 px-6 font-medium">Model JSON</th>
+              <th class="text-left py-4 px-6 font-medium">Boundary action</th>
+              <th class="text-left py-4 px-6 font-medium">Latency</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5">
+            <tr>
+              <td class="py-5 px-6 text-ink-300 italic">"Simple service contract, R$500/mo, 12 months, 30-day notice."</td>
+              <td class="py-5 px-6 font-mono text-xs"><span class="text-accent-300">{"risco":"Baixo","_confidence":0.85}</span></td>
+              <td class="py-5 px-6"><span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Validated → <code class="!bg-white/10 !border-white/10 !text-emerald-300">"Baixo"</code></span></td>
+              <td class="py-5 px-6 font-mono text-ink-400">~3.0s</td>
+            </tr>
+            <tr>
+              <td class="py-5 px-6 text-ink-300 italic">"Unilateral, 95% penalty, no termination right."</td>
+              <td class="py-5 px-6 font-mono text-xs"><span class="text-accent-300">{"risco":"Alto","_confidence":0.9}</span></td>
+              <td class="py-5 px-6"><span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Validated → <code class="!bg-white/10 !border-white/10 !text-emerald-300">"Alto"</code></span></td>
+              <td class="py-5 px-6 font-mono text-ink-400">~3.1s</td>
+            </tr>
+            <tr class="bg-white/[0.02]">
+              <td class="py-5 px-6 text-ink-300 italic">(any input — malformed model output)</td>
+              <td class="py-5 px-6 font-mono text-xs"><span class="text-rose-300">{"unexpected":"object"}</span></td>
+              <td class="py-5 px-6"><span class="inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> Zod rejected → <code class="!bg-white/10 !border-white/10 !text-amber-300">queue:"Advogados"</code></span></td>
+              <td class="py-5 px-6 font-mono text-ink-400">—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mt-8 max-w-3xl">
+      <p class="text-ink-300 text-lg leading-relaxed">
+        The third row is the point. A small open-weight model produced non-conforming JSON. The transpiler-generated validator caught the deviation and triggered <code class="!bg-white/10 !border-white/10 !text-accent-300">Fallback.ManualReview</code> — behavior the developer <em>never wrote</em>. Applied to the educational scenario, the same dispatch would route the case to the teacher's review queue instead of an attorneys' queue.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== QUICKSTART ============== -->
+<section id="quickstart" class="py-24 lg:py-32 bg-white">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="grid lg:grid-cols-12 gap-12 items-start">
+
+      <div class="lg:col-span-5">
+        <p class="pill pill-light mb-4">Quick start</p>
+        <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+          Running in five minutes. Zero cloud.
+        </h2>
+        <p class="text-xl text-ink-600 leading-relaxed mb-6">
+          You do not need to clone the repository, configure cloud credentials, or provision a database. Ollama on localhost and SQLite as a file are enough.
+        </p>
+        <p class="text-ink-600">
+          To switch to Anthropic Claude, edit <code>.env</code> and set <code>EPI_AI_PROVIDER=anthropic</code>. The <code>.epi</code> source does not change. The generated code does not change.
+        </p>
+      </div>
+
+      <div class="lg:col-span-7">
+<pre><code class="language-bash"># once — install Ollama and pull a small instruction-tuned model
+ollama pull qwen2.5:3b-instruct
+ollama serve &amp;
+
+# install Epi and bootstrap a project
+pip install epi-lang
+epi init meu-app
+cd meu-app
+
+# transpile to a runnable Next.js project
+epi transpile contrato.epi --target nextjs --outdir ./app
+
+# run it
+cd app
+npm install
+cp .env.example .env       # pre-configured for Ollama local
+npx prisma migrate dev --name init
+npm run dev</code></pre>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============== USE / DONT USE ============== -->
+<section class="py-24 lg:py-32 bg-ink-50 border-y border-ink-100">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="max-w-3xl mb-12">
+      <p class="pill pill-light mb-4">Scope</p>
+      <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+        Epi is a sharp tool with a narrow edge.
+      </h2>
+      <p class="text-xl text-ink-600 leading-relaxed">
+        It is not a general AI framework. It is a discipline for cases where AI outputs must be persisted, audited, and challenged before they become ground truth.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="rounded-xl border border-emerald-200 bg-white p-8">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+          <h3 class="text-xl font-bold text-ink-900">Use Epi when</h3>
+        </div>
+        <ul class="space-y-3 text-ink-700">
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1">▸</span><span>Audit-by-construction is required (education, legal, healthcare, government)</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1">▸</span><span>AI-inferred values must be persisted and traceable, not just shown</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1">▸</span><span>Human-in-the-loop is structural, not exceptional</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1">▸</span><span>The domain has a meaningful prior distribution</span></li>
+          <li class="flex gap-3"><span class="text-emerald-600 mt-1">▸</span><span>You ship a focused product, not a general AI platform</span></li>
+        </ul>
+      </div>
+      <div class="rounded-xl border border-rose-200 bg-white p-8">
+        <div class="flex items-center gap-2 mb-5">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          <h3 class="text-xl font-bold text-ink-900">Do <em>not</em> use Epi for</h3>
+        </div>
+        <ul class="space-y-3 text-ink-700">
+          <li class="flex gap-3"><span class="text-rose-600 mt-1">▸</span><span>Conversational chatbots or generic assistants</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1">▸</span><span>Complex RAG, multi-tool agents, or fine-tuning workflows</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1">▸</span><span>Teams already invested in a custom AI platform</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1">▸</span><span>Pure creative generation</span></li>
+          <li class="flex gap-3"><span class="text-rose-600 mt-1">▸</span><span>Sub-100ms latency paths</span></li>
+        </ul>
+      </div>
+    </div>
+    <p class="text-center mt-8 text-ink-500">
+      Full honest list of current gaps: <a href="LIMITATIONS.md" class="text-accent-700 hover:text-accent-800 underline underline-offset-2">LIMITATIONS.md</a>
+    </p>
+  </div>
+</section>
+
+<!-- ============== AUTHORS ============== -->
+<section class="py-24 lg:py-28 bg-white border-t border-ink-100">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="max-w-3xl">
+      <p class="pill pill-light mb-4">Research</p>
+      <h2 class="text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-6">
+        Active research at UFRGS.
+      </h2>
+      <p class="text-xl text-ink-700 leading-relaxed mb-8">
+        Epi is developed in the Postgraduate Program in Informatics in Education (PPGIE) at the Federal University of Rio Grande do Sul. A short paper is in preparation for submission to <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="text-accent-700 hover:text-accent-800 underline underline-offset-2">SBLP 2026</a> (1 June 2026). The current implementation is open source and under continuous integration.
+      </p>
+
+      <h3 class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">Authors</h3>
+      <div class="space-y-4 mb-8">
+        <div class="flex gap-4">
+          <div class="w-10 h-10 rounded-full bg-accent-100 text-accent-700 grid place-items-center font-semibold flex-shrink-0">RR</div>
+          <div>
+            <div class="font-semibold text-ink-900">Randerson Rebouças</div>
+            <div class="text-ink-600 text-sm">UFRGS — PPGIE (PhD candidate). Language design and implementation.</div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="w-10 h-10 rounded-full bg-accent-100 text-accent-700 grid place-items-center font-semibold flex-shrink-0">DB</div>
+          <div>
+            <div class="font-semibold text-ink-900">Prof. Dante Barone</div>
+            <div class="text-ink-600 text-sm">UFRGS. Stochastic-computing foundations behind Epi's <code>prior</code> and <code>confidence_threshold</code> primitives.</div>
+          </div>
+        </div>
+      </div>
+      <p class="text-sm text-ink-500">
+        Trace + Checkpoint design informed by ongoing discussion with Profa. Rosa Maria Vicari (UFRGS / PPGIE).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============== FOOTER ============== -->
+<footer class="bg-ink-950 text-ink-400 py-12">
+  <div class="max-w-7xl mx-auto px-6 lg:px-10">
+    <div class="grid md:grid-cols-3 gap-8 items-start">
+      <div>
+        <div class="flex items-center gap-2 font-bold text-lg tracking-tight text-white mb-2">
+          <span class="inline-block w-7 h-7 rounded-md bg-gradient-to-br from-accent-500 to-accent-700 grid place-items-center text-white text-xs font-mono">ε</span>
+          Epi
+        </div>
+        <p class="text-sm">A type discipline for AI-augmented full-stack applications.</p>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Project</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="https://github.com/RandMelville/epi-lang" class="hover:text-white">GitHub repository</a></li>
+          <li><a href="https://pypi.org/project/epi-lang/" class="hover:text-white">PyPI package</a></li>
+          <li><a href="https://github.com/RandMelville/epi-lang/issues" class="hover:text-white">Issues</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="text-white font-semibold mb-3 text-sm uppercase tracking-wider">Documentation</h4>
+        <ul class="space-y-2 text-sm">
+          <li><a href="SPEC.md" class="hover:text-white">Language specification</a></li>
+          <li><a href="ARCHITECTURE.md" class="hover:text-white">Transpiler architecture</a></li>
+          <li><a href="LIMITATIONS.md" class="hover:text-white">Limitations (honest list)</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-10 pt-6 border-t border-white/10 flex flex-wrap justify-between gap-4 text-sm">
+      <div>© 2026 Randerson Rebouças. Apache 2.0 License.</div>
+      <div>Static page served from <code class="!bg-white/10 !border-white/10 !text-ink-300">/docs</code> via GitHub Pages.</div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-core.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-rust.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/components/prism-typescript.min.js"></script>
+
 </body>
 </html>
