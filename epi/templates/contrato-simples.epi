@@ -1,5 +1,6 @@
 @Language: Epi v0.3
 @Goal: "Minimal contract classification — quickstart example"
+@Database: sqlite
 
 // Smallest viable Epi program:
 //   1 Entity with one rigid field and one epistemic field

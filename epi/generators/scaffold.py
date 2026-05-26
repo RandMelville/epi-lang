@@ -87,12 +87,24 @@ module.exports = nextConfig;
 """
 
 
-def generate_env_example() -> str:
-    return """\
+def generate_env_example(program: EpiProgram | None = None) -> str:
+    # Match Prisma datasource — keep DATABASE_URL syntax in sync.
+    db_url_line = 'DATABASE_URL=postgresql://user:password@localhost:5432/dbname'
+    db_comment = "# PostgreSQL connection string"
+    if program is not None:
+        for m in program.metadata:
+            if m.key.lower() == "database":
+                value = str(m.value).strip().strip('"').lower()
+                if value == "sqlite":
+                    db_url_line = 'DATABASE_URL="file:./dev.db"'
+                    db_comment = "# SQLite — file-based DB, no external server needed"
+                break
+
+    return f"""\
 # Epi Generated Project — copy to .env and fill in your values
 
-# PostgreSQL connection string
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+{db_comment}
+{db_url_line}
 
 # ---- LLM provider configuration ----
 # Choose ONE of the blocks below.

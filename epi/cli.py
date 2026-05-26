@@ -261,7 +261,7 @@ def transpile(
         # Provider-agnostic LLM client (Anthropic | Ollama via env vars)
         if program.pulses:
             files_to_write["lib/llm-client.ts"] = generate_llm_client()
-    files_to_write[".env.example"] = generate_env_example()
+    files_to_write[".env.example"] = generate_env_example(program)
     files_to_write[".gitignore"] = generate_gitignore()
     files_to_write["README.md"] = generate_readme(program, target)
 

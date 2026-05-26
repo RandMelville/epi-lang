@@ -14,7 +14,7 @@ start: metadata* declaration+
 
 // --- Metadata (@Language, @Goal) ---
 metadata: "@" METADATA_KEY ":" metadata_value
-METADATA_KEY: "Language" | "Goal"
+METADATA_KEY: IDENT
 metadata_value: ESCAPED_STRING | metadata_text
 metadata_text: (IDENT | VERSION | NUMBER | ".")+
 VERSION: /v\d+\.\d+/
