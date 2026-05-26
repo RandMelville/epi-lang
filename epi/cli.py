@@ -10,7 +10,9 @@ Usage:
 from __future__ import annotations
 
 import json
+import shutil
 import sys
+from importlib.resources import as_file, files
 from pathlib import Path
 
 import typer
@@ -41,6 +43,72 @@ def main():
 def version():
     """Show Epi version."""
     console.print(f"[bold]Epi[/bold] v{__version__}")
+
+
+@app.command()
+def init(
+    name: str = typer.Argument(..., help="Project directory name"),
+    force: bool = typer.Option(False, "--force", help="Overwrite if directory exists"),
+):
+    """Bootstrap a new Epi project with a starter example."""
+    target_dir = Path.cwd() / name
+
+    if target_dir.exists():
+        if not force:
+            console.print(
+                f"[red]Directory '{name}' already exists.[/red] "
+                f"Use [bold]--force[/bold] to overwrite."
+            )
+            raise typer.Exit(1)
+        shutil.rmtree(target_dir)
+
+    target_dir.mkdir(parents=True)
+
+    # Locate templates inside the installed package (works from site-packages too).
+    templates_root = files("epi").joinpath("templates")
+
+    # 1. Copy the starter .epi file (renamed to contrato.epi for tidiness).
+    epi_template = templates_root.joinpath("contrato-simples.epi")
+    if not epi_template.is_file():
+        console.print(
+            "[red]Internal error:[/red] template "
+            "'contrato-simples.epi' not found in installed package."
+        )
+        raise typer.Exit(2)
+    with as_file(epi_template) as src:
+        shutil.copy(src, target_dir / "contrato.epi")
+
+    # 2. Copy the prompts/ subdirectory if present.
+    prompts_template = templates_root.joinpath("prompts")
+    if prompts_template.is_dir():
+        prompts_out = target_dir / "prompts"
+        prompts_out.mkdir(parents=True, exist_ok=True)
+        for entry in prompts_template.iterdir():
+            if entry.is_file():
+                with as_file(entry) as src:
+                    shutil.copy(src, prompts_out / entry.name)
+
+    # 3. Copy the starter README.
+    readme_template = templates_root.joinpath("README.md")
+    if readme_template.is_file():
+        with as_file(readme_template) as src:
+            shutil.copy(src, target_dir / "README.md")
+
+    next_steps = (
+        f"  1. cd {name}\n"
+        "  2. epi transpile contrato.epi --target nextjs --outdir ./app\n"
+        "  3. cd app && npm install\n"
+        "  4. cp .env.example .env  (and configure LLM provider)\n"
+        "  5. npx prisma migrate dev --name init\n"
+        "  6. npm run dev"
+    )
+    console.print(
+        Panel(
+            f"[bold green]Project created at ./{name}/[/bold green]\n\n"
+            f"[bold]Next steps:[/bold]\n{next_steps}",
+            title="Epi init",
+        )
+    )
 
 
 @app.command()
@@ -144,6 +212,7 @@ def transpile(
         generate_env_example,
         generate_gitignore,
         generate_readme,
+        generate_llm_client,
     )
 
     source = _read_source(file)
@@ -189,6 +258,9 @@ def transpile(
         files_to_write["package.json"] = generate_package_json(program)
         files_to_write["tsconfig.json"] = generate_tsconfig()
         files_to_write["next.config.js"] = generate_next_config()
+        # Provider-agnostic LLM client (Anthropic | Ollama via env vars)
+        if program.pulses:
+            files_to_write["lib/llm-client.ts"] = generate_llm_client()
     files_to_write[".env.example"] = generate_env_example()
     files_to_write[".gitignore"] = generate_gitignore()
     files_to_write["README.md"] = generate_readme(program, target)
@@ -206,8 +278,8 @@ def transpile(
         else:
             console.print(f"  [yellow]warning[/yellow] prompts/ directory not found — {prompt_name} will be missing")
 
-    # Detect Anthropic usage for setup warning
-    uses_anthropic = any("Anthropic" in content for content in files_to_write.values())
+    # Detect LLM usage (any Pulse → llm-client.ts is generated)
+    uses_llm = "lib/llm-client.ts" in files_to_write
 
     # Output
     if dry_run:
@@ -222,16 +294,19 @@ def transpile(
             full_path.write_text(content)
             console.print(f"  [green]wrote[/green] {filepath}")
 
+        env_step = (
+            "  4. Edit .env — set DATABASE_URL and choose an LLM provider"
+            if uses_llm
+            else "  4. Edit .env — set DATABASE_URL"
+        )
         next_steps = (
             "  1. cd " + str(outdir) + "\n"
             "  2. npm install\n"
             "  3. cp .env.example .env\n"
-            "  4. Edit .env — set DATABASE_URL and ANTHROPIC_API_KEY\n"
+            f"{env_step}\n"
             "  5. npx prisma migrate dev --name init\n"
             "  6. npm run dev"
         )
-        if not uses_anthropic:
-            next_steps = next_steps.replace("  4. Edit .env — set DATABASE_URL and ANTHROPIC_API_KEY\n", "  4. Edit .env — set DATABASE_URL\n")
 
         console.print(
             Panel(
@@ -244,14 +319,23 @@ def transpile(
             )
         )
 
-        if uses_anthropic:
+        if uses_llm:
             console.print(
                 Panel(
-                    "[bold yellow]ANTHROPIC_API_KEY required[/bold yellow]\n\n"
-                    "This project calls the Claude API. Before running:\n"
-                    "  • Get your key at [link]https://console.anthropic.com/keys[/link]\n"
-                    "  • Add to .env: ANTHROPIC_API_KEY=sk-ant-...",
-                    title="Setup",
+                    "[bold]LLM provider configuration[/bold]\n\n"
+                    "Choose ONE in .env (defaults to Anthropic):\n\n"
+                    "[cyan]Anthropic Claude (cloud)[/cyan]\n"
+                    "  EPI_AI_PROVIDER=anthropic\n"
+                    "  EPI_AI_MODEL=claude-sonnet-4-20250514\n"
+                    "  ANTHROPIC_API_KEY=sk-ant-...        [link]https://console.anthropic.com/keys[/link]\n\n"
+                    "[cyan]Ollama (local, no API key)[/cyan]\n"
+                    "  EPI_AI_PROVIDER=ollama\n"
+                    "  EPI_AI_MODEL=qwen2.5:3b-instruct\n"
+                    "  EPI_AI_BASE_URL=http://localhost:11434/v1\n"
+                    "  # requires `ollama serve` running\n\n"
+                    "The Epi epistemic contract (JSON output + _confidence field) is\n"
+                    "enforced uniformly across providers.",
+                    title="Provider setup",
                 )
             )
 

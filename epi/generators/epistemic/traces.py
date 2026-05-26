@@ -166,13 +166,11 @@ def generate_trace_execution(pulse: Pulse, trace: TraceStep, program: EpiProgram
         f"// Input: {entity_name}\n"
         f"// Checkpoint strategy: {checkpoint_strategy if (has_conditional_checkpoint or has_unconditional_checkpoint) else 'none'}\n"
         f"\n"
-        f'import Anthropic from "@anthropic-ai/sdk";\n'
+        f'import {{ llmCall }} from "../../lib/llm-client";\n'
         f'import {{ readFileSync }} from "fs";\n'
         f'import {{ resolve }} from "path";\n'
         f'import {{ randomUUID }} from "crypto";\n'
         f'import {{ saveTrace, getTrace, updateTrace, TraceState }} from "../../lib/trace-store";\n'
-        f"\n"
-        f"const client = new Anthropic();\n"
         f"\n"
         f"export interface {trace.name}Result {{\n"
         f"  traceId: string;\n"
@@ -212,15 +210,12 @@ def generate_trace_execution(pulse: Pulse, trace: TraceStep, program: EpiProgram
         f"  let confidence = 0;\n"
         f"\n"
         f"  try {{\n"
-        f"    const response = await client.messages.create({{\n"
-        f'      model: "claude-sonnet-4-20250514",\n'
-        f"      max_tokens: {int(max_tokens)},\n"
+        f"    const {{ text }} = await llmCall({{\n"
+        f"      systemPrompt,\n"
+        f"      userContent,\n"
+        f"      maxTokens: {int(max_tokens)},\n"
         f"      temperature: {temp},\n"
-        f"      system: systemPrompt,\n"
-        f"      messages: [{{ role: \"user\", content: userContent }}],\n"
         f"    }});\n"
-        f"\n"
-        f"    const text = response.content[0].type === \"text\" ? response.content[0].text : \"{{}}\";\n"
         f"    rawOutput = JSON.parse(text);\n"
         f"\n"
         f"    // Extract _confidence (Epi epistemic contract)\n"

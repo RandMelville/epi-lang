@@ -1,0 +1,44 @@
+@Language: Epi v0.3
+@Goal: "Minimal contract classification — quickstart example"
+
+// Smallest viable Epi program:
+//   1 Entity with one rigid field and one epistemic field
+//   1 Guard
+//   1 Pulse that classifies via LLM with confidence-aware fallback
+// Designed to compile and run end-to-end in under 30 seconds with either
+// Anthropic Claude or a local Ollama model (qwen2.5:3b-instruct).
+
+Entity Contrato {
+    id: UUID(auto),
+    documento: Text,
+    criado_em: DateTime(auto),
+    risco: AI.Enum(
+        Alto, Medio, Baixo,
+        strict: true,
+        confidence_threshold: 0.7
+    )
+}
+
+Guard SomenteAdvogados {
+    Condition: Auth.Role == "Lawyer"
+}
+
+Pulse ClassificarRisco {
+    Input: Contrato
+    Protect: Guard.SomenteAdvogados
+    Process:
+        Execute: AI.scan(
+            source: Input.documento,
+            prompt: file("@prompts/legal_scan_simples.md"),
+            temperature: 0.1,
+            confidence_threshold: 0.7,
+            on_low_confidence: Checkpoint.ReviewRequired(role: "Lawyer"),
+            on_fail: Fallback.ManualReview(Queue: "Advogados")
+        )
+    Output: Contrato.risco
+}
+
+Pipeline AnalisarContrato {
+    Flow: ClassificarRisco
+    On_Error: Retry(max: 2, backoff: exponential)
+}

@@ -44,7 +44,7 @@ def _nextjs_pulse(pulse: Pulse, entity_name: str, program: EpiProgram) -> str:
 
     # Collect imports based on what the pulse needs
     imports = [
-        'import Anthropic from "@anthropic-ai/sdk";',
+        'import { llmCall } from "../lib/llm-client";',
         'import { readFileSync } from "fs";',
         'import { resolve } from "path";',
     ]
@@ -71,7 +71,6 @@ def _nextjs_pulse(pulse: Pulse, entity_name: str, program: EpiProgram) -> str:
         f"// Input: {entity_name}\n"
         f"{guard_comment}\n"
         f"{imports_block}\n\n"
-        f"const client = new Anthropic();\n\n"
         f"export async function {func_name}(input: {entity_name}) {{\n"
         f"{ai_code}\n"
         f"}}\n"
@@ -180,20 +179,12 @@ def _nextjs_ai_call(call: AICall, pulse: Pulse, program: EpiProgram, index: int)
         f"\n"
         f"  let aiResult: unknown;\n"
         f"  try {{\n"
-        f"    const response = await client.messages.create({{\n"
-        f'      model: "claude-sonnet-4-20250514",\n'
-        f"      max_tokens: {int(max_tokens)},\n"
+        f"    const {{ text }} = await llmCall({{\n"
+        f"      systemPrompt,\n"
+        f"      userContent: JSON.stringify({source}),\n"
+        f"      maxTokens: {int(max_tokens)},\n"
         f"      temperature: {temp},\n"
-        f"      system: systemPrompt,\n"
-        f"      messages: [\n"
-        f"        {{\n"
-        f'          role: "user",\n'
-        f"          content: JSON.stringify({source}),\n"
-        f"        }},\n"
-        f"      ],\n"
         f"    }});\n"
-        f"\n"
-        f"    const text = response.content[0].type === 'text' ? response.content[0].text : '';\n"
         f"    aiResult = JSON.parse(text);\n"
         f"  }} catch (error) {{\n"
         f"    console.error(`[Epi] AI call failed for {pulse.name}:`, error);\n"

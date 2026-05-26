@@ -72,7 +72,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["epi"]
-include = ["epi/grammar/*.lark"]
+include = ["epi/grammar/*.lark", "epi/templates/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

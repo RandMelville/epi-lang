@@ -127,7 +127,7 @@ checkpoint_params: "(" ai_call_args ")"
 // ============================================================
 pipeline: "Pipeline" IDENT "{" pipeline_body "}"
 pipeline_body: pipeline_flow pipeline_error?
-pipeline_flow: "Flow:" IDENT ("->" IDENT)+
+pipeline_flow: "Flow:" IDENT ("->" IDENT)*
 pipeline_error: "On_Error:" error_strategy
 error_strategy: "Retry" "(" ai_call_args ")"
               | "Halt"
