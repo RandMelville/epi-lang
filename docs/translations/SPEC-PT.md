@@ -1,3 +1,8 @@
+> **Nota de tradução**
+>
+> Este documento é uma tradução de cortesia. A especificação canônica é [`docs/SPEC.md`](../SPEC.md) (inglês).
+> Em caso de divergência, a versão em inglês prevalece. Esta tradução pode ficar defasada em relação ao original.
+
 # Especificação da Linguagem Epi v0.3
 
 **Epi — Epistemic Programming Interface**

@@ -39,7 +39,7 @@ class TestMetadata:
     def test_language_version_preserves_dot(self, contrato_program):
         meta = contrato_program.metadata[0]
         assert meta.key == "Language"
-        assert meta.value == "Epi v0.2"
+        assert meta.value == "Epi v0.3"
 
     def test_goal_parsed(self, contrato_program):
         goals = [m for m in contrato_program.metadata if m.key == "Goal"]

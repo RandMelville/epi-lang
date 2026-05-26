@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <em>A Zero-Stack Intent-Oriented Language with an Epistemic Type System</em>
+  <em>A type discipline for AI-augmented full-stack applications</em>
 </p>
 
 <p align="center">
@@ -15,35 +15,37 @@
 
 ---
 
-> **Research Status: Active / Structural Validation (v0.3)**
+> **Research status:** v0.3 — active development, structural validation phase.
 >
-> Author: [Randerson Rebouças](https://github.com/RandMelville) — PhD Candidate, UFRGS
+> Author: [Randerson Rebouças](https://github.com/RandMelville) — PhD candidate, UFRGS.
+> A short paper is being prepared for SBLP 2026.
 
-## The Problem
+## What Epi is
 
-Modern full-stack development is a stack of accidental complexity. To build a simple application that stores data and classifies it with AI, a developer must:
+Epi is a domain-specific language whose type system makes the **epistemic boundary** between deterministic computation and AI inference explicit. From a single `.epi` source, the transpiler generates a complete Next.js project — database schema, API routes, auth middleware, runtime validators, LLM inference calls, and UI components — such that **AI-inferred values cannot bypass validation**.
 
-1. Define a database schema (Prisma/SQL)
-2. Write API routes (Express/FastAPI)
-3. Add authentication middleware
-4. Create validation schemas (Zod/Pydantic)
-5. Wire LLM inference calls with error handling
-6. Build UI components (React/Next.js)
-7. Connect everything with state management
+The thesis is narrow and honest: LLM hallucination cannot be prevented, but it can be **contained at a type-system boundary, by construction, in the generated code**.
 
-Seven layers. Three to five languages. Dozens of files. **And the actual business logic — "store a contract and classify its risk" — fits in a single sentence.**
+## What problem this solves
 
-Worse: when AI enters the picture, traditional type systems cannot distinguish between a value that was *computed* (a UUID) and a value that was *hallucinated* (an AI classification). A `string` is a `string`. The database doesn't know. The compiler doesn't care. The hallucination becomes ground truth.
+In a typical AI-augmented app, validation of LLM outputs, confidence thresholding, fallback handling, and audit trails are all **optional** — features the developer must remember to add. They get omitted in practice.
 
-## The Solution
+Epi makes them **structural consequences of the type**. A declaration like
 
-Epi is a language with **five primitives** and an **Epistemic Type System** that formally separates what is *known* (deterministic) from what must be *inferred* (stochastic) — in the same grammar, in the same file.
+```epi
+risco: AI.Enum(Alto, Medio, Baixo, strict: true, confidence_threshold: 0.85)
+```
 
-You write `.epi`. The transpiler generates a complete, auditable project: database schema, API routes, auth middleware, validation schemas, LLM inference functions, and UI components.
+necessarily produces:
 
-**One file in. Full stack out. Every AI output validated.**
+1. A database column (deterministic, Prisma).
+2. A Zod schema constraining the LLM output at runtime.
+3. An LLM inference call with confidence reporting.
+4. A checkpoint route that pauses for human review when confidence is below threshold.
 
-## How It Looks
+You cannot compile an Epi program with an AI field and forget to validate the output. The transpiler emits the contract.
+
+## Example
 
 ```epi
 @Language: Epi v0.3
@@ -57,7 +59,7 @@ Entity Contrato {
     criado_em: DateTime(auto),
     risco: AI.Enum(Alto, Medio, Baixo, strict: true)
 }
-//       ▲ Rigid types: deterministic    ▲ Epistemic type: AI-inferred, validated
+//       ▲ Rigid: deterministic    ▲ Epistemic: AI-inferred, validated at the boundary
 
 Guard SomenteAdvogados {
     Condition: Auth.Role == "Lawyer"
@@ -82,153 +84,199 @@ Pipeline AnalisarContrato {
 }
 
 Lens Dashboard {
-    Mood: "Clean, Legal-Tech"
+    Mood: "Clean, Legal-Tech"            // [experimental]
     Display:
         Table(Contrato, columns: [titulo, valor, risco]),
         Form(Contrato) -> Button("Analisar").trigger(ExtrairRisco)
 }
 ```
 
-**50 lines.** No framework boilerplate. No hand-written middleware. No untyped AI calls. The transpiler generates everything — and the Epistemic Type System guarantees that `risco` is validated against `["Alto", "Medio", "Baixo"]` before it ever touches the database.
+Fewer than 80 lines. The transpiler generates the entire Next.js project — schema, middleware, routes, validators, LLM calls, UI — with the epistemic contract enforced.
 
-## The Five Primitives
+## When to use Epi
 
-| Primitive | What it does | Epistemic role |
-|-----------|-------------|----------------|
-| **Entity** | Data schema with typed fields | Declares the epistemic boundary — rigid fields vs. AI-inferred fields |
-| **Guard** | Auth & authorization constraints | Deterministic — transpiles to middleware |
-| **Pulse** | AI execution with hallucination control | Epistemic — every `AI.*` call has `temperature`, `prompt`, and `on_fail` |
-| **Pipeline** | Composes Pulses into flows | Deterministic — orchestration with error strategy |
-| **Lens** | Semantic UI declaration | Mixed — structure is deterministic, `Mood` is epistemic |
+- Domains where audit-by-construction is required: legal, healthcare, education, government.
+- Apps where AI-inferred values must be persisted and traceable, not just shown.
+- Focused LLM-augmented products, not general-purpose AI platforms.
+- Settings where human-in-the-loop is structural (Trace + Checkpoint maps naturally).
+- Domains with a meaningful prior distribution (Bayesian update genuinely helps).
 
-## The Epistemic Type System
+## When NOT to use Epi
 
-The core innovation. Every type in Epi belongs to one of two domains:
+- Conversational chatbots or customer-support assistants.
+- Apps centered on complex RAG, multi-tool agents, or fine-tuning workflows.
+- Teams with a mature in-house AI platform (LangGraph custom, internal orchestration).
+- Pure creative generation (`confidence` and `checkpoint` don't apply).
+- Latency-critical paths under 100 ms; Epi is for decision-grade flows.
 
-**Rigid Types** — deterministic, no AI involvement:
-```
-UUID(auto)  Text  Int  Float  Decimal  Bool  DateTime(auto)  JSON
-```
-
-**Epistemic Types** — AI-inferred, runtime-validated:
-```
-AI.Enum(Value1, Value2, strict: true)
-AI.Text(max_tokens: N)
-AI.Classification(labels: [...])
-AI.Score(min: 0, max: 1)
-AI.Embedding(dimensions: N)
-```
-
-A single `AI.Enum(Alto, Medio, Baixo, strict: true)` declaration generates:
-1. A **database column** (`String` in Prisma)
-2. A **runtime validation schema** (Zod enum / Pydantic validator)
-3. An **LLM inference call** with temperature and fallback constraints
-
-If it compiles, it validates.
+See [docs/LIMITATIONS.md](docs/LIMITATIONS.md) for the full honest list of gaps in v0.3.
 
 ## Architecture
 
-Three-layer transpiler. The LLM is formally excluded from Layers 1 and 2.
+A three-layer transpiler. The LLM is formally excluded from Layers 1 and 2.
 
 ```
-.epi source → [Layer 1: Parser] → [Layer 2: Rigid Generator] → [Layer 3: Epistemic Generator]
-               Lark + EBNF          Jinja2 templates              LLM (constrained)
-               100% deterministic    100% deterministic             validated by Layer 2
+.epi source
+   ▼
+[Layer 1: Parser]            Lark + EBNF              100% deterministic
+   ▼
+[Layer 2: Rigid Generator]   Prisma, middleware,      100% deterministic
+                             routes, Zod validators
+   ▼
+[Layer 3: Epistemic Gen.]    LLM calls, Trace,        validated by Layer 2
+                             Checkpoint, Lens
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full technical breakdown.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full breakdown.
 
-## Quick Start
+## Quick start
+
+The PyPI package installs the CLI; example `.epi` files currently live in this repo. A `pip-only` workflow lands in v0.4 with `epi init`.
 
 ```bash
-# Install from PyPI
+git clone https://github.com/RandMelville/epi-lang.git
+cd epi-lang
 pip install epi-lang
 
-# Validate syntax
+# Validate
 epi validate examples/contrato.epi
 
-# Transpile to a full project
+# Transpile to a Next.js project
 epi transpile examples/contrato.epi --target nextjs --outdir ./generated
+
+cd generated
+npm install
+cp .env.example .env
+# Edit .env: DATABASE_URL=postgresql://...  and  ANTHROPIC_API_KEY=sk-ant-...
+npx prisma migrate dev --name init
+npm run dev
 ```
 
 For development:
 
 ```bash
-git clone https://github.com/RandMelville/epi-lang.git
-cd epi-lang
 pip install -e ".[dev]"
+pytest
 ```
 
-## Project Structure
+## The five primitives
+
+| Primitive | What it does | Status |
+|---|---|---|
+| **Entity** | Data schema with typed fields, rigid + epistemic | stable |
+| **Guard** | Auth & authorization, transpiles to middleware | stable |
+| **Pulse** | AI execution unit with `temperature`, `prompt`, `on_fail` | stable |
+| **Pipeline** | Composes Pulses with retry/backoff strategy | stable |
+| **Lens** | Semantic UI declaration | `Display` / `Inject` stable; `Mood` experimental |
+
+## The epistemic type system
+
+Two domains.
+
+**Rigid types** — deterministic, no AI involvement:
 
 ```
-epi/grammar/epi.lark        EBNF grammar definition
-epi/parser/ast_nodes.py     Pydantic AST models (Epistemic Type System)
-epi/parser/builder.py       Lark Transformer (parse tree → typed AST)
-epi/generators/             Code generators
-  deterministic/            Layer 2: Prisma, middleware, routes
-  epistemic/                Layer 3: AI inference stubs, Lens UI
-epi/cli.py                  Typer CLI (parse, validate, transpile)
-examples/contrato.epi       Canonical example
-SPEC.md                     Formal language specification
-ARCHITECTURE.md             Technical architecture
-MANIFESTO.md                Project philosophy
+UUID(auto)   Text   Int   Float   Decimal   Bool   DateTime(auto)   JSON
 ```
+
+**Epistemic types** — AI-inferred, runtime-validated:
+
+```
+AI.Enum(values..., strict, prior, confidence_threshold)
+AI.Text(max_tokens)
+AI.Classification(labels)
+AI.Score(min, max)
+AI.Embedding(dimensions)
+```
+
+A single epistemic declaration generates a database column, a Zod validator, an LLM inference call, and optionally a checkpoint route. If it compiles, the runtime contract is enforced.
+
+## Trace + Checkpoint (v0.3 highlight)
+
+A `Pulse` can be decomposed into `Trace` steps. Each step can `Expose:` intermediate reasoning fields and pause at a `Checkpoint:` for human review before the final output is committed.
+
+```epi
+Pulse AvaliarRespostaAluno {
+    Trace CompreenderEnunciado {
+        Execute: AI.reason(source: Input.enunciado, prompt: file("@prompts/..."))
+        Expose: interpretacao, conceitos_chave, criterios_avaliacao
+        Checkpoint: ReviewRequired(role: "Professor")
+    }
+
+    Trace AvaliarResposta {
+        Execute: AI.classify(
+            source: Input.resposta_aluno,
+            confidence_threshold: 0.85,
+            on_low_confidence: Checkpoint.ReviewRequired(role: "Professor")
+        )
+    }
+}
+```
+
+This generates an in-memory `TraceState` store, inspect / resume HTTP routes, and an audit trail of every human approval or correction. Designed for high-stakes evaluation flows (pedagogical assessment, legal review, clinical triage).
 
 ## Documentation
 
 | Document | Purpose |
-|----------|---------|
-| [SPEC.md](SPEC.md) | Formal language specification — grammar, type system, primitives |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Transpiler architecture — three layers, design decisions |
-| [MANIFESTO.md](MANIFESTO.md) | Philosophy — why epistemic types matter |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
+|---|---|
+| [docs/SPEC.md](docs/SPEC.md) | Formal language specification (English, canonical) |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Transpiler architecture and design decisions |
+| [docs/MANIFESTO.md](docs/MANIFESTO.md) | Why epistemic types matter |
+| [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | What Epi does NOT do (honest list of gaps) |
+| [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | How to contribute |
+| [docs/PAPER.md](docs/PAPER.md) | Paper draft (SBLP 2026 in preparation) |
+| [docs/translations/SPEC-PT.md](docs/translations/SPEC-PT.md) | Portuguese translation (may lag) |
 
 ## Status
 
-**v0.3 — Research / Active Development**
+**Stable in v0.3:**
+- EBNF grammar (Lark)
+- AST with epistemic type system (Pydantic)
+- Parser + Lark transformer
+- Deterministic generators: Prisma schema, middleware, routes, Zod validators
+- Epistemic generators: LLM calls (Anthropic), Trace + Checkpoint, Bayesian prior
+- CLI: `validate`, `parse`, `transpile`
+- 121 tests passing
+- PyPI package (`pip install epi-lang`)
 
-- [x] Formal specification (SPEC.md)
-- [x] EBNF grammar (Lark)
-- [x] AST node models (Pydantic)
-- [x] Lark Transformer (parser → typed AST)
-- [x] Deterministic generators (Prisma, middleware, routes with retry)
-- [x] Epistemic generators (Claude API integration, fallback metadata)
-- [x] Lens Mood → Tailwind styling (6 moods)
-- [x] Epistemic traces + checkpoints (human-in-the-loop)
-- [x] CLI (parse, validate, transpile)
-- [x] 121 tests (pytest)
-- [x] PyPI package (`pip install epi-lang`)
-- [ ] Template expansion for FastAPI target
-- [ ] Academic paper (ArXiv submission)
+**Experimental — known to be incomplete:**
+- `Lens.Mood` — deterministic keyword-to-Tailwind lookup of 6 hardcoded moods. Not LLM-generated UI; do not rely on it.
+- `--target fastapi` — blocked in the CLI; current output is inconsistent.
 
-## Related Work
+**Planned for v0.4:**
+- Multi-provider LLM adapter (Ollama, OpenAI, Gemini, Anthropic) — currently Anthropic-only.
+- `epi init` for project bootstrap without cloning the repo.
+- FastAPI target completion (or formal removal).
+- Empirical evaluation study (Epi-generated vs hand-written equivalents).
+- SQLite option for quickstart without local Postgres.
+
+## Related work
 
 | System | Relationship to Epi |
-|--------|---------------------|
-| [ProbZelus](https://dl.acm.org/doi/10.1145/3385412.3386009) (PLDI 2020) | Separates deterministic/probabilistic in reactive streams — Epi adapts this to full-stack transpilation |
-| [SlicStan](https://dl.acm.org/doi/10.1145/3290348) (POPL 2019) | Information-flow types for probabilistic programs — Epi generalizes to application-level types |
-| [BAML](https://github.com/BoundaryML/baml) | Typed LLM function signatures — Epi extends to full application generation |
-| [Wasp](https://wasp-lang.dev) | Full-stack DSL (React + Node) — Epi adds epistemic types and AI-aware transpilation |
+|---|---|
+| [ProbZelus](https://dl.acm.org/doi/10.1145/3385412.3386009) (PLDI 2020) | Separates deterministic and probabilistic reactive streams. Epi lifts the separation to application-level types. |
+| [SlicStan](https://dl.acm.org/doi/10.1145/3290348) (POPL 2019) | Information-flow types for probabilistic programs. Epi adapts the discipline to AI-augmented full-stack apps. |
+| Russo & Sabelfeld, *Dynamic vs. Static Flow-Sensitive Security Analysis* (CSF 2010) | Information-flow control as type-level separation of security levels — structural analog to Epi's rigid/epistemic separation. |
+| [BAML](https://github.com/BoundaryML/baml) | Typed LLM function signatures. Epi extends the idea to whole-application generation. |
+| [Wasp](https://wasp-lang.dev) | Full-stack DSL (React + Node). Epi adds epistemic types and AI-aware code generation. |
+| [DSPy](https://dspy.ai/) (Stanford) | Declarative LLM programming via signatures. Orthogonal to Epi — DSPy optimizes prompts, Epi separates type domains. |
 
 ## Citation
 
-If you use Epi in academic work, please cite:
-
 ```bibtex
 @software{reboucas2026epi,
-  author       = {Rebouças, Randerson},
-  title        = {Epi: An Epistemic Programming Interface for AI-Aware Full-Stack Transpilation},
-  year         = {2026},
-  url          = {https://github.com/RandMelville/epi-lang},
-  version      = {0.3.0}
+  author  = {Rebouças, Randerson},
+  title   = {Epi: An Epistemic Programming Interface for AI-Augmented Full-Stack Transpilation},
+  year    = {2026},
+  url     = {https://github.com/RandMelville/epi-lang},
+  version = {0.3.0}
 }
 ```
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md). Honest critique preferred over wishful documentation.
 
 ## License
 
-[Apache License 2.0](LICENSE) — Copyright (c) 2026 Randerson Rebouças
+[Apache License 2.0](LICENSE) — Copyright (c) 2026 Randerson Rebouças.

@@ -47,12 +47,21 @@ dev = [
     "ruff>=0.4.0",
     "mypy>=1.10.0",
 ]
-epistemic = [
+# Optional: only needed if you plan to run a fastapi-targeted output (experimental, gated in v0.3)
+fastapi = [
     "anthropic>=0.40.0",
 ]
 all = [
-    "epi-lang[dev,epistemic]",
+    "epi-lang[dev,fastapi]",
 ]
+
+[project.urls]
+Homepage = "https://github.com/RandMelville/epi-lang"
+Source = "https://github.com/RandMelville/epi-lang"
+Issues = "https://github.com/RandMelville/epi-lang/issues"
+Documentation = "https://github.com/RandMelville/epi-lang/tree/main/docs"
+Paper = "https://github.com/RandMelville/epi-lang/blob/main/docs/PAPER.md"
+Specification = "https://github.com/RandMelville/epi-lang/blob/main/docs/SPEC.md"
 
 [project.scripts]
 epi = "epi.cli:app"

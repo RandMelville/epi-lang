@@ -111,11 +111,25 @@ def validate(
 @app.command()
 def transpile(
     file: Path = typer.Argument(..., help="Path to .epi file"),
-    target: str = typer.Option("nextjs", "--target", "-t", help="Target framework: nextjs, fastapi"),
+    target: str = typer.Option("nextjs", "--target", "-t", help="Target framework: nextjs (fastapi is experimental, will be v0.4)"),
     outdir: Path = typer.Option(Path("./output"), "--outdir", "-d", help="Output directory"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show what would be generated without writing"),
 ):
     """Transpile a .epi file into a full-stack project."""
+    if target != "nextjs":
+        console.print(
+            Panel(
+                f"[yellow]Target '{target}' is experimental and not yet complete in v0.3.[/yellow]\n\n"
+                f"Current v0.3 supports only [bold]--target nextjs[/bold].\n"
+                f"FastAPI target is planned for v0.4 — it currently generates inconsistent\n"
+                f"output (missing routes, validators, and traces) and is intentionally blocked\n"
+                f"to avoid confusion.\n\n"
+                f"Run with [bold]--target nextjs[/bold] instead.",
+                title="[red]Unsupported target[/red]",
+            )
+        )
+        raise typer.Exit(1)
+
     from epi.generators.deterministic.prisma import generate_prisma
     from epi.generators.deterministic.middleware import generate_middleware
     from epi.generators.deterministic.routes import generate_routes

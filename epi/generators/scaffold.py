@@ -182,5 +182,5 @@ npm run dev
 ## Epistemic Types
 
 This project uses the Epi Epistemic Type System. AI-inferred fields are validated
-at runtime via Zod schemas in `validators/`. See [SPEC.md](https://github.com/RandMelville/epi-lang/blob/main/SPEC.md).
+at runtime via Zod schemas in `validators/`. See [SPEC.md](https://github.com/RandMelville/epi-lang/blob/main/docs/SPEC.md).
 """
