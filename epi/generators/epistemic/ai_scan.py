@@ -122,10 +122,25 @@ def _nextjs_ai_call(call: AICall, pulse: Pulse, program: EpiProgram, index: int)
     # For the validation failure path we use parsed.error (Zod), not the caught exception.
     validation_block = ""
     if validator_ref:
+        # If the Pulse output is a specific Entity.field, the LLM response is expected to
+        # contain that field by name. Extract it before validation — otherwise z.enum
+        # would reject the full object even if `risco` is correct inside it.
+        extract_block = ""
+        if pulse.output_ref and "." in pulse.output_ref:
+            field_name = pulse.output_ref.split(".")[1]
+            extract_block = (
+                f"  // Output declared as {pulse.output_ref} — extract that field\n"
+                f"  // from the AI response. Falls back to the full object so a model\n"
+                f"  // that already returns the bare value still validates.\n"
+                f'  const valueToValidate = (aiResult as Record<string, unknown>)["{field_name}"] ?? aiResult;\n'
+            )
+        else:
+            extract_block = "  const valueToValidate = aiResult;\n"
         validation_block = (
             f"\n"
             f"  // Validate AI output against epistemic schema (Layer 2 constraint)\n"
-            f"  const parsed = {validator_ref}.safeParse(aiResult);\n"
+            f"{extract_block}"
+            f"  const parsed = {validator_ref}.safeParse(valueToValidate);\n"
             f"  if (!parsed.success) {{\n"
             f"    console.error(`[Epi] Validation failed for {pulse.name}:`, parsed.error.issues);\n"
         )

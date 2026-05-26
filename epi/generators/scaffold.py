@@ -34,9 +34,11 @@ def generate_package_json(program: EpiProgram) -> str:
             "@anthropic-ai/sdk": "^0.39.0",
             "@prisma/client": "^5.22.0",
             "next": "^15.0.0",
+            "next-auth": "^4.24.11",
             "openai": "^4.77.0",
             "react": "^18.3.0",
             "react-dom": "^18.3.0",
+            "zod": "^3.23.8",
         },
         "devDependencies": {
             "@types/node": "^22.0.0",
