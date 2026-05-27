@@ -1,0 +1,49 @@
+@Language: Epi v0.3
+@Goal: "Pedagogical assessment with confidence-aware checkpoint"
+@Database: sqlite
+
+// Smallest viable Epi program for the educational scenario.
+// One Entity, one Guard, one Pulse, one Pipeline.
+// Designed to run end-to-end against a local 3B model via Ollama
+// or against Anthropic Claude in cloud — same source, same contract.
+
+Entity Submissao {
+    id: UUID(auto),
+    enunciado: Text,
+    resposta_aluno: Text,
+    criado_em: DateTime(auto),
+    avaliacao: AI.Enum(
+        Correto, Parcial, Incorreto,
+        strict: true,
+        prior: Distribution(
+            Correto: 0.40,
+            Parcial: 0.45,
+            Incorreto: 0.15
+        ),
+        confidence_threshold: 0.85
+    )
+}
+
+Guard SoProfessores {
+    Condition: Auth.Role == "Professor"
+}
+
+Pulse AvaliarResposta {
+    Input: Submissao
+    Protect: Guard.SoProfessores
+    Process:
+        Execute: AI.classify(
+            source: Input.resposta_aluno,
+            prompt: file("@prompts/avaliar_simples.md"),
+            temperature: 0.1,
+            confidence_threshold: 0.85,
+            on_low_confidence: Checkpoint.ReviewRequired(role: "Professor"),
+            on_fail: Fallback.ManualReview(Queue: "Professores")
+        )
+    Output: Submissao.avaliacao
+}
+
+Pipeline FluxoAvaliacao {
+    Flow: AvaliarResposta
+    On_Error: Retry(max: 2, backoff: exponential)
+}
