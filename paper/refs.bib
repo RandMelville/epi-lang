@@ -1,112 +1,94 @@
 % =====================================================================
 %  Bibliography for the Epi SBLP 2026 short-paper draft
+%  ---------------------------------------------------------------------
+%  Style: ACM-Reference-Format (CBSoft requires it).
+%  Entries below include the fields ACM-Reference-Format expects: full
+%  author names (no initials), full venue title, year, pages, and DOI
+%  where applicable.
 % =====================================================================
 
 @misc{anthropic,
-  author       = {Anthropic},
-  title        = {{Claude API documentation}},
+  author       = {{Anthropic}},
+  title        = {Claude {API} Documentation},
   year         = {2025},
   howpublished = {\url{https://docs.anthropic.com}},
   note         = {Accessed: May 2026}
 }
 
 @inproceedings{baudart2020,
-  author    = {Baudart, Guillaume and Mandel, Louis and Atkinson, Eric and
-               Sherman, Benjamin and Pouzet, Marc and Carbin, Michael},
+  author    = {Baudart, Guillaume and Mandel, Louis and Atkinson, Eric and Sherman, Benjamin and Pouzet, Marc and Carbin, Michael},
   title     = {Reactive Probabilistic Programming},
-  booktitle = {Proceedings of the 41st ACM SIGPLAN Conference on
-               Programming Language Design and Implementation
-               (PLDI 2020)},
+  booktitle = {Proceedings of the 41st {ACM} {SIGPLAN} Conference on Programming Language Design and Implementation},
+  series    = {PLDI 2020},
   year      = {2020},
   pages     = {898--912},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
   doi       = {10.1145/3385412.3386009}
 }
 
 @misc{baml,
   author       = {{BoundaryML}},
-  title        = {{BAML: a domain-specific language for AI engineering}},
+  title        = {{BAML}: A Domain-Specific Language for {AI} Engineering},
   year         = {2024},
-  howpublished = {\url{https://github.com/BoundaryML/baml}}
+  howpublished = {\url{https://github.com/BoundaryML/baml}},
+  note         = {Accessed: May 2026}
 }
 
-@inproceedings{gorinova2019,
+@article{gorinova2019,
   author    = {Gorinova, Maria I. and Gordon, Andrew D. and Sutton, Charles},
-  title     = {Probabilistic Programming with Densities in {SlicStan}:
-               Efficient, Flexible, and Deterministic},
-  booktitle = {Proceedings of the ACM on Programming Languages
-               (POPL 2019)},
+  title     = {Probabilistic Programming with Densities in {SlicStan}: Efficient, Flexible, and Deterministic},
+  journal   = {Proceedings of the {ACM} on Programming Languages},
   volume    = {3},
+  number    = {POPL},
   year      = {2019},
+  articleno = {35},
+  numpages  = {30},
   doi       = {10.1145/3290348}
 }
 
 @misc{khattab2023dspy,
-  author       = {Khattab, Omar and Singhvi, Arnav and Maheshwari, Paridhi
-                  and Zhang, Zhiyuan and Santhanam, Keshav and others},
-  title        = {{DSPy}: Compiling Declarative Language Model Calls Into
-                  Self-Improving Pipelines},
-  year         = {2023},
-  eprint       = {2310.03714},
-  archivePrefix= {arXiv},
-  primaryClass = {cs.CL}
-}
-
-@misc{lark,
-  author       = {Shinan, Erez},
-  title        = {{Lark}: a modern parsing library for {Python}},
-  year         = {2024},
-  howpublished = {\url{https://github.com/lark-parser/lark}}
+  author        = {Khattab, Omar and Singhvi, Arnav and Maheshwari, Paridhi and Zhang, Zhiyuan and Santhanam, Keshav and Vardhamanan, Sri and Haq, Saiful and Sharma, Ashutosh and Joshi, Thomas T. and Moazam, Hanna and Miller, Heather and Zaharia, Matei and Potts, Christopher},
+  title         = {{DSPy}: Compiling Declarative Language Model Calls Into Self-Improving Pipelines},
+  year          = {2023},
+  eprint        = {2310.03714},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2310.03714}
 }
 
 @misc{ollama,
   author       = {{Ollama Inc.}},
-  title        = {{Ollama: run open-weight LLMs locally}},
+  title        = {Ollama: Run Open-Weight {LLM}s Locally},
   year         = {2024},
-  howpublished = {\url{https://ollama.com}}
+  howpublished = {\url{https://ollama.com}},
+  note         = {Accessed: May 2026}
 }
 
 @book{pierce2002,
   author    = {Pierce, Benjamin C.},
   title     = {Types and Programming Languages},
-  publisher = {MIT Press},
   year      = {2002},
+  publisher = {{MIT} Press},
+  address   = {Cambridge, MA, USA},
   isbn      = {0-262-16209-1}
-}
-
-@misc{prisma,
-  author       = {{Prisma}},
-  title        = {{Prisma ORM documentation}},
-  year         = {2024},
-  howpublished = {\url{https://www.prisma.io}}
 }
 
 @inproceedings{russo2010,
   author    = {Russo, Alejandro and Sabelfeld, Andrei},
-  title     = {Dynamic vs. Static Flow-Sensitive Security Analysis},
-  booktitle = {2010 23rd IEEE Computer Security Foundations Symposium
-               (CSF)},
+  title     = {Dynamic vs.\ Static Flow-Sensitive Security Analysis},
+  booktitle = {Proceedings of the 23rd {IEEE} Computer Security Foundations Symposium},
+  series    = {CSF 2010},
   year      = {2010},
   pages     = {186--199},
+  publisher = {{IEEE} Computer Society},
   doi       = {10.1109/CSF.2010.20}
-}
-
-@misc{nextjs,
-  author       = {{Vercel}},
-  title        = {{Next.js framework documentation}},
-  year         = {2024},
-  howpublished = {\url{https://nextjs.org}}
 }
 
 @misc{wasp,
   author       = {{Wasp}},
-  title        = {{Wasp}: a {DSL} for full-stack web apps},
+  title        = {{Wasp}: A {DSL} for Full-Stack Web Apps},
   year         = {2024},
-  howpublished = {\url{https://wasp-lang.dev}}
-}
-
-@misc{zod,
-  author       = {Abramov, Colin},
-  title        = {{Zod}: {TypeScript}-first schema validation},
-  year         = {2024},
-  howpublished = {\url{https://zod.dev}}
+  howpublished = {\url{https://wasp-lang.dev}},
+  note         = {Accessed: May 2026}
 }
