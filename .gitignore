@@ -68,3 +68,6 @@ paper/*.blg
 paper/*.out
 paper/*.synctex.gz
 paper/main.pdf
+
+# Generated artifacts
+paper/*.docx
