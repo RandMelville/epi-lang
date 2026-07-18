@@ -10,15 +10,16 @@
   <a href="https://github.com/RandMelville/epi-lang/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
   <a href="https://pypi.org/project/epi-lang/"><img src="https://img.shields.io/pypi/v/epi-lang?color=orange" alt="PyPI"></a>
   <img src="https://img.shields.io/badge/python-%3E%3D3.11-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/status-research%20%2F%20active-green.svg" alt="Status">
+  <a href="https://doi.org/10.5281/zenodo.21433256"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.21433256.svg" alt="DOI"></a>
+  <a href="https://cbsoft.sbc.org.br/2026/"><img src="https://img.shields.io/badge/SBLP%202026-Accepted-success.svg" alt="Accepted at SBLP 2026"></a>
 </p>
 
 ---
 
 > **Research status:** v0.3 — active development, structural validation phase.
 >
-> Author: [Randerson Rebouças](https://github.com/RandMelville) — PhD candidate, UFRGS.
-> A short paper is being prepared for SBLP 2026.
+> Authors: [Randerson Rebouças](https://github.com/RandMelville) (PhD candidate, UFRGS), Dante Barone, and Eliseo Reátegui — PPGIE/UFRGS.
+> The short paper **"Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code"** was **accepted at SBLP 2026**, the 30th Brazilian Symposium on Programming Languages, part of [CBSoft 2026](https://cbsoft.sbc.org.br/2026/).
 
 ## What Epi is
 
@@ -224,7 +225,7 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
 | [docs/MANIFESTO.md](docs/MANIFESTO.md) | Why epistemic types matter |
 | [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | What Epi does NOT do (honest list of gaps) |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | How to contribute |
-| [docs/PAPER.md](docs/PAPER.md) | Paper draft (SBLP 2026 in preparation) |
+| [docs/PAPER.md](docs/PAPER.md) | Paper draft (accepted at SBLP 2026) |
 | [docs/translations/SPEC-PT.md](docs/translations/SPEC-PT.md) | Portuguese translation (may lag) |
 
 ## Status
@@ -265,13 +266,16 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
 
 ```bibtex
 @software{reboucas2026epi,
-  author  = {Rebouças, Randerson},
-  title   = {Epi: An Epistemic Programming Interface for AI-Augmented Full-Stack Transpilation},
+  author  = {Rebouças, Randerson Oliveira Melville and Barone, Dante Augusto Couto and Reátegui, Eliseo},
+  title   = {Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code},
   year    = {2026},
   url     = {https://github.com/RandMelville/epi-lang},
-  version = {0.3.0}
+  version = {0.3.1},
+  doi     = {10.5281/zenodo.21433256}
 }
 ```
+
+The paper was accepted at **SBLP 2026** (30th Brazilian Symposium on Programming Languages, CBSoft 2026).
 
 ## Contributing
 

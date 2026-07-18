@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Epi — Epistemic Programming Interface</title>
   <meta name="description" content="A type discipline for AI-augmented full-stack applications. Epi makes the boundary between deterministic computation and AI inference visible to the type system — so hallucination cannot silently propagate to the database." />
-  <meta name="author" content="Randerson Rebouças (UFRGS/PPGIE), Dante Barone (UFRGS)" />
+  <meta name="author" content="Randerson Rebouças, Dante Barone, Eliseo Reátegui (UFRGS/PPGIE)" />
   <meta property="og:title" content="Epi — Epistemic Programming Interface" />
   <meta property="og:description" content="A type discipline that contains LLM hallucination at the type-system boundary, by construction, in generated code." />
   <meta property="og:url" content="https://randmelville.github.io/epi-lang/" />
@@ -131,10 +131,16 @@
     <div class="grid lg:grid-cols-12 gap-12 items-center">
 
       <div class="lg:col-span-7">
-        <span class="pill pill-dark mb-6">
-          <span class="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse"></span>
-          Research at UFRGS · v0.3.1
-        </span>
+        <div class="flex flex-wrap items-center gap-2 mb-6">
+          <span class="pill pill-dark">
+            <span class="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse"></span>
+            Research at UFRGS · v0.3.1
+          </span>
+          <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="pill pill-dark hover:bg-white/10 transition">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            Accepted at SBLP 2026 · CBSoft
+          </a>
+        </div>
         <h1 class="text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.05] tracking-tight mb-6">
           A type discipline for<br />
           <span class="bg-gradient-to-r from-accent-300 to-accent-500 bg-clip-text text-transparent">AI-augmented</span> applications.
@@ -153,8 +159,8 @@
           </a>
         </div>
         <p class="mt-6 text-sm text-ink-400">
-          Active research at UFRGS / PPGIE. Authors: Randerson Rebouças, Prof. Dante Barone.<br/>
-          Submission planned for <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="text-accent-300 hover:text-accent-200 underline underline-offset-2">SBLP 2026</a> (1 June 2026).
+          Active research at UFRGS / PPGIE. Authors: Randerson Rebouças, Prof. Dante Barone, Prof. Eliseo Reátegui.<br/>
+          Accepted at <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="text-accent-300 hover:text-accent-200 underline underline-offset-2">SBLP 2026</a>, the 30th Brazilian Symposium on Programming Languages (CBSoft 2026).
         </p>
       </div>
 
@@ -651,7 +657,7 @@ npm run dev</code></pre>
         Active research at UFRGS.
       </h2>
       <p class="text-xl text-ink-700 leading-relaxed mb-8">
-        Epi is developed in the Postgraduate Program in Informatics in Education (PPGIE) at the Federal University of Rio Grande do Sul. A short paper is in preparation for submission to <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="text-accent-700 hover:text-accent-800 underline underline-offset-2">SBLP 2026</a> (1 June 2026). The current implementation is open source and under continuous integration.
+        Epi is developed in the Postgraduate Program in Informatics in Education (PPGIE) at the Federal University of Rio Grande do Sul. The short paper <em>"Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code"</em> was <strong>accepted at <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="text-accent-700 hover:text-accent-800 underline underline-offset-2">SBLP 2026</a></strong>, the 30th Brazilian Symposium on Programming Languages, part of CBSoft 2026. The implementation is open source, under continuous integration, and archived on <a href="https://doi.org/10.5281/zenodo.21433256" class="text-accent-700 hover:text-accent-800 underline underline-offset-2">Zenodo</a>.
       </p>
 
       <h3 class="text-sm font-semibold text-ink-500 uppercase tracking-wider mb-4">Authors</h3>
@@ -667,7 +673,14 @@ npm run dev</code></pre>
           <div class="w-10 h-10 rounded-full bg-accent-100 text-accent-700 grid place-items-center font-semibold flex-shrink-0">DB</div>
           <div>
             <div class="font-semibold text-ink-900">Prof. Dante Barone</div>
-            <div class="text-ink-600 text-sm">UFRGS. Stochastic-computing foundations behind Epi's <code>prior</code> and <code>confidence_threshold</code> primitives.</div>
+            <div class="text-ink-600 text-sm">UFRGS — PPGIE. Stochastic-computing foundations behind Epi's <code>prior</code> and <code>confidence_threshold</code> primitives.</div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="w-10 h-10 rounded-full bg-accent-100 text-accent-700 grid place-items-center font-semibold flex-shrink-0">ER</div>
+          <div>
+            <div class="font-semibold text-ink-900">Prof. Eliseo Reátegui</div>
+            <div class="text-ink-600 text-sm">UFRGS — PPGIE. Educational technology and the pedagogical-assessment framing of the work.</div>
           </div>
         </div>
       </div>
@@ -694,6 +707,7 @@ npm run dev</code></pre>
         <ul class="space-y-2 text-sm">
           <li><a href="https://github.com/RandMelville/epi-lang" class="hover:text-white">GitHub repository</a></li>
           <li><a href="https://pypi.org/project/epi-lang/" class="hover:text-white">PyPI package</a></li>
+          <li><a href="https://doi.org/10.5281/zenodo.21433256" class="hover:text-white">Zenodo archive (DOI)</a></li>
           <li><a href="https://github.com/RandMelville/epi-lang/issues" class="hover:text-white">Issues</a></li>
         </ul>
       </div>
