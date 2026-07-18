@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use Epi, please cite it as below."
+title: "Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code"
+authors:
+  - family-names: "Rebouças"
+    given-names: "Randerson Oliveira Melville"
+    affiliation: "PPGIE, Universidade Federal do Rio Grande do Sul (UFRGS)"
+  - family-names: "Barone"
+    given-names: "Dante Augusto Couto"
+    affiliation: "PPGIE, Universidade Federal do Rio Grande do Sul (UFRGS)"
+  - family-names: "Reategui"
+    given-names: "Eliseo"
+    affiliation: "PPGIE, Universidade Federal do Rio Grande do Sul (UFRGS)"
+version: "0.3.1"
+license: Apache-2.0
+repository-code: "https://github.com/RandMelville/epi-lang"
+url: "https://randmelville.github.io/epi-lang"
+keywords:
+  - "type systems"
+  - "domain-specific languages"
+  - "large language models"
+  - "code generation"
+  - "information-flow control"
+# TODO: after cutting the v0.3.1 GitHub Release and enabling the Zenodo
+# integration, add the archival DOI here, e.g.:
+# doi: "10.5281/zenodo.XXXXXXX"
