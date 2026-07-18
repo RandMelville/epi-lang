@@ -1,133 +1,142 @@
-% =====================================================================
-%  Epi: An Epistemic Type System for Containing LLM Hallucination
-%  in Generated Code
-%
-%  SBLP 2026 — Short Paper draft (CBSoft ACM-like template)
-%  Revision: 2026-05-27 (post Architect/Stylist/Peer-Review pipeline)
-%  ---------------------------------------------------------------------
-%  Template: official CBSoft 2026 LaTeX template (acmart-based).
-%  Get it from the SBLP 2026 Overleaf:
-%    https://www.overleaf.com/read/cyhpwwkngcwk
-%
-%  USAGE ON OVERLEAF:
-%    1. Make a copy of the official SBLP 2026 template.
-%    2. Replace the sample main.tex with this file.
-%    3. Replace the sample bibliography with refs.bib (in this folder).
-%    4. Compile with pdfLaTeX + BibTeX.
-%
-%  FOR JEMS3 SUBMISSION (double-blind):
-%    Change the \documentclass line below to include "anonymous,review":
-%       \documentclass[sigconf,anonymous,review]{acmart}
-%    The acmart class will automatically hide author names and add line
-%    numbers for reviewers. No manual edits to the \author blocks needed.
-% =====================================================================
-
 \documentclass[sigconf]{acmart}
-% For double-blind submission, use instead:
-% \documentclass[sigconf,anonymous,review]{acmart}
 
-% CBSoft uses an ACM-like format without the ACM Reference block.
+%% Using the option "anonymous" will produce "Anonymous Author(s)"
+%% for double-anonymized review. Upon acceptance, remove this option
+%% and set the authors' names and affiliations using the corresponding
+%% commands.
+%% For JEMS3 double-blind submission, replace the line above with:
+%%   \documentclass[sigconf,anonymous,review]{acmart}
+
+%% CBSoft uses an ACM-like format without the ACM Reference block.
+%% The following warning from acmart can be safely ignored:
+%% "ACM reference format is mandatory for papers over one page."
 \settopmatter{printacmref=false}
-% Remove the ACM copyright footer from the first column.
-\renewcommand\footnotetextcopyrightpermission[1]{}
-% CBSoft uses an ACM-like format without a copyright note.
+\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
+
+%% CBSoft uses an ACM-like format without a copyright note.
 \setcopyright{none}
 
-% Symposium identification in page headers.
+%% These commands are for a PROCEEDINGS abstract or paper.
 \acmConference[SBLP 2026]{30th Brazilian Symposium on Programming Languages}{September 8--11, 2026}{São Paulo, SP, Brazil}
 
-% =====================================================================
-%  TITLE
-% =====================================================================
+% CBSoft uses an ACM-like format without CCS Concepts.
+% The following warning from acmart can be safely ignored:
+% "CCS concepts are mandatory for papers over two pages."
+
+%% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{
+    \providecommand\BibTeX{{Bib\TeX}}
+}
+
+%% Camera-ready item 17: remove colored links.
+\hypersetup{hidelinks}
+
+%% Only for papers written in PORTUGUESE:
+%% comment out the following three lines
+%\renewcommand\abstractname{Resumo}
+%\renewcommand\keywordsname{Palavras-chave}
+%\renewcommand\refname{Referências}
+
+%% end of the preamble, start of the body of the document source.
+
+
+% ------------------------------------------------------------
+% Authors: please make sure to read the checklist comments
+% provided at the end of this document before submission.
+% ------------------------------------------------------------
+\begin{document}
+
+%% The "title" command has an optional parameter,
+%% allowing the author to define a "short title" to be used on the page
+%% headers.
 \title{Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code}
 
-% Short title to fit page headers
-\renewcommand{\shorttitle}{Epi: An Epistemic Type System for AI-Augmented Code}
-
-% =====================================================================
-%  AUTHORS (one author block per author — required by acmart)
-%
-%  When you switch to the anonymous variant of \documentclass, acmart
-%  hides these blocks automatically; you do NOT need to edit them.
-% =====================================================================
-\author{Randerson Rebou\c{c}as}
+%% The "author" command and its associated commands are used to define
+%% the authors and their affiliations.
+\author{Randerson Oliveira Melville Rebou\c{c}as}
 \affiliation{
-  \institution{Postgraduate Program in Informatics in Education (PPGIE),
-               Universidade Federal do Rio Grande do Sul (UFRGS)}
+  \institution{Postgraduate Program in Informatics in Education (PPGIE), Universidade Federal do Rio Grande do Sul (UFRGS)}
   \city{Porto Alegre}
   \country{Brazil}
 }
 \email{randerson.melville@gmail.com}
 
-\author{Dante Barone}
+\author{Dante Augusto Couto Barone}
 \affiliation{
-  \institution{Universidade Federal do Rio Grande do Sul (UFRGS)}
+  \institution{Postgraduate Program in Informatics in Education (PPGIE), Universidade Federal do Rio Grande do Sul (UFRGS)}
   \city{Porto Alegre}
   \country{Brazil}
 }
 \email{barone@inf.ufrgs.br}
 
-% Surnames only in page headers; for >2 authors, use "Surname et al."
-\renewcommand{\shortauthors}{Rebou\c{c}as and Barone}
+\author{Eliseo Reategui}
+\affiliation{
+  \institution{Postgraduate Program in Informatics in Education (PPGIE), Universidade Federal do Rio Grande do Sul (UFRGS)}
+  \city{Porto Alegre}
+  \country{Brazil}
+}
+\email{eliseoreategui@gmail.com}
 
-% =====================================================================
-%  ABSTRACT (single continuous paragraph, per CBSoft template)
-% =====================================================================
+%% By default, the full list of authors will be used on the page
+%% headers. This list is often too long and will overlap
+%% other information printed in the page headers.
+%% This command allows the author to define a more concise list
+%% of authors' names for this purpose.
+\renewcommand{\shortauthors}{Rebou\c{c}as et al.}
+\renewcommand{\shorttitle}{Epi: An Epistemic Type System for AI-Augmented Code}
+
+%% The abstract is a short summary of the work the paper presents.
 \begin{abstract}
-We introduce \textbf{Epi}, a domain-specific language whose type system makes the boundary between deterministic computation and LLM-inferred values both explicit and enforceable at compile time. From a single \texttt{.epi} source --- entities, authorization rules, AI inference steps, orchestration pipelines --- the Epi transpiler emits a complete Next.js project: database schema, API routes, authorization middleware, runtime validators, LLM call wrappers, and human-review checkpoints. Every AI-inferred field carries a type-level contract --- an enum, a numeric range, a confidence threshold, an optional Bayesian prior --- and the transpiler discharges that contract in the generated code. The developer does not write the validation: the type does. We argue that LLM hallucination cannot be prevented, but it can be \emph{contained} --- by construction, at a type-system boundary in generated code. We exercise Epi end-to-end on the same source compiled against Anthropic Claude (cloud) and Qwen 2.5 3B (local, via Ollama). On an educational assessment task, the boundary routes a low-confidence misclassification to teacher review --- a behavior that follows structurally from one type annotation, not from handwritten code. Epi is open-source under Apache 2.0.
+We introduce \textbf{Epi}, a domain-specific language whose type system makes the boundary between deterministic computation and LLM-inferred values both explicit and enforceable at compile time. From a single \texttt{.epi} source (entities, authorization rules, AI inference steps, orchestration pipelines), the Epi transpiler emits a complete Next.js project: database schema, API routes, authorization middleware, runtime validators, LLM call wrappers, and human-review checkpoints. Every AI-inferred field carries a type-level contract (an enum, a numeric range, a confidence threshold, an optional Bayesian prior), and the transpiler discharges that contract in the generated code. The developer does not write the validation: the type does. We argue that LLM hallucination cannot be prevented, but it can be \emph{contained}, by construction, at a type-system boundary in generated code. We exercise Epi end-to-end on the same source compiled against Anthropic Claude (cloud) and Qwen 2.5 3B (local, via Ollama). In an educational assessment task, the generated boundary catches a low-confidence misclassification that would otherwise reach a database of record and routes it to teacher review. This behavior is derived structurally from a single type annotation rather than from handwritten code. Unlike typed-LLM interfaces such as BAML and DSPy, which give structure to individual model calls, Epi propagates one epistemic contract across the whole generated application, from the database column to the human-review checkpoint. The present evidence is a single worked example; a mechanized soundness proof and a controlled comparison against hand-written baselines remain future work. Epi is open-source under the Apache 2.0 license.
 \end{abstract}
 
+%% Keywords. The author(s) should pick words that accurately describe
+%% the presented work. Separate the keywords with commas.
 \keywords{Type Systems, Domain-Specific Languages, Large Language Models, Code Generation, Information-Flow Control}
 
+%% This command processes the author, affiliation, and title
+%% information and builds the first part of the formatted document.
+%% "frenchspacing" avoids an additional space after a period at the end of a sentence.
 \frenchspacing
 \maketitle
 
-% =====================================================================
-%  1. INTRODUCTION
-% =====================================================================
 \section{Introduction}
 
-Large Language Models (LLMs) are increasingly embedded in production software, performing classification, extraction, summarization, and generation alongside conventional business logic. Yet the languages we use to build that software were designed for an era of deterministic computation: a function, given the same input, returns the same output. This assumption silently fails the moment an LLM enters the call graph.
+Large Language Models (LLMs) are increasingly embedded in production software, performing classification, extraction, summarization, and generation alongside conventional business logic. Yet the languages we use to build that software were designed for an era of deterministic computation: a function, given the same input, returns the same output. This assumption silently fails the moment an LLM enters the call graph, because an LLM may confidently return content that is fluent but unfaithful to its input, a failure mode surveyed under the umbrella term \emph{hallucination}~\cite{ji2023}.
 
-We identify three concrete problems that arise when building LLM-augmented applications in conventional languages.
+Throughout this paper we call a value \emph{epistemic} when it is produced by LLM inference and therefore carries uncertainty, in contrast to a \emph{rigid} value produced by ordinary deterministic code. We identify three concrete problems that arise when the two kinds of value are built in a conventional language whose type system cannot tell them apart. To make the problems concrete we phrase them against one common target, a TypeScript web application with a Prisma-managed database, but they are properties of the host language's type discipline rather than of any specific stack.
 
-\textbf{P1 --- No type-level separation of epistemic domains.} A database column declared \texttt{status: String} and an LLM-inferred column declared \texttt{risk: String} are treated identically by the host type system. If the LLM hallucinates \texttt{"Unknown"} in place of an expected label, the value reaches the database with no type-level alarm.
+\textbf{P1: No type-level separation between rigid and epistemic values.} Consider a clinical-triage record with two fields: \texttt{status}, written by application code, and \texttt{risk}, whose value is produced by an LLM classifier. Declared in the host language as \texttt{status:~String} and \texttt{risk:~String}, the two are indistinguishable to the type checker. If the model returns \texttt{"Unknown"} instead of one of the expected labels (\texttt{"High"}, \texttt{"Medium"}, \texttt{"Low"}), the value is written to the database with no type-level alarm, because nothing in the type of \texttt{risk} records that it came from inference and must be validated.
 
-\textbf{P2 --- Forced stack fragmentation.} A single AI-augmented feature forces the developer to hold four mental models at once: SQL or Prisma for the database, TypeScript or Python for the API, React for the UI, and a vendor SDK for the LLM. One conceptual decision is distributed across four grammars and four toolchains.
+\textbf{P2: Forced stack fragmentation.} A single AI-augmented feature typically forces the developer to hold several mental models at once. In the common stack above, that means Prisma for the database schema, TypeScript for the API, React for the UI, and a vendor SDK for the LLM call. This particular combination is only one possibility among many, but the underlying difficulty is general: one conceptual decision is distributed across several grammars and toolchains, with no single place that states the epistemic contract.
 
-\textbf{P3 --- No grammar-enforced hallucination contract.} Output validation, retry strategies, confidence thresholding, fallback dispatch, and audit trails are all \emph{optional} features that the developer must remember to add. In practice, all five are routinely omitted.
+\textbf{P3: No grammar construct that requires a hallucination contract.} Output validation, retry strategies, confidence thresholding, fallback dispatch, and audit trails are the safeguards a developer would add around an LLM call. The language-design problem is that no construct in a general-purpose host grammar \emph{requires} any of them: each is an ordinary library call the developer may write, forget, or remove, and the type checker never objects. Our aim is a grammar in which these safeguards are not optional additions but obligations attached to the epistemic type itself.
 
-This paper introduces \textbf{Epi (Epistemic Programming Interface)}, a domain-specific language and transpiler that addresses these problems together. Our contributions are:
+Taken together, these problems motivate a language-level approach in which AI-inferred values are explicitly distinguished, constrained, validated, and audited before they can affect persistent application state.
 
-\begin{enumerate}
-  \item The \textbf{Epistemic Type System}, a type discipline that separates \emph{rigid} (deterministic) and \emph{epistemic} (AI-inferred) values at the type level and requires runtime validation at the boundary by construction.
-  \item The \textbf{Epi language}, with five orthogonal primitives (Entity, Guard, Pulse, Pipeline, Lens) and a Lark/EBNF grammar; a fragment of the grammar appears in Section~\ref{sec:type-system}.
-  \item The \textbf{Epi transpiler}, a three-layer architecture in which the LLM is formally excluded from the deterministic layers and operates only within constraints emitted by them.
-  \item An \textbf{end-to-end worked example} showing that the same \texttt{.epi} program runs against a frontier cloud LLM and a small local open-weight model, and that the type system catches a low-confidence misclassification as the type contract requires --- presented as a concrete demonstration, not a controlled study.
-\end{enumerate}
+This paper introduces \textbf{Epi}, the Epistemic Programming Interface, a domain-specific language and transpiler designed to address these problems together. At the core of Epi is an epistemic type system that separates \emph{rigid}, deterministic values from \emph{epistemic}, AI-inferred values at the type level. This distinction is not merely descriptive: whenever an epistemic value crosses into rigid application state, the generated code requires runtime validation by construction. Typed interfaces for LLMs such as BAML~\cite{baml} and DSPy~\cite{khattab2023dspy} already bring structure to a single model call; the novelty of Epi, developed in Section~\ref{sec:related}, is to carry that contract beyond the call site into the database schema, the middleware, and the human-review path emitted for the whole application.
 
-Our thesis is narrow and we state it explicitly: \textbf{LLM hallucination cannot be prevented, but it can be contained --- by construction, at a type-system boundary in generated code.}
+Epi also defines a compact language organized around five orthogonal primitives: \texttt{Entity}, \texttt{Guard}, \texttt{Pulse}, \texttt{Pipeline}, and \texttt{Lens}. These primitives provide a unified source specification for typed schemas, authorization predicates, AI execution units, composed flows, and user-interface surfaces. The language is specified through an EBNF grammar processed by the Lark parser toolkit~\cite{lark}, a fragment of which is presented in Section~\ref{sec:type-system}. From this specification, the Epi transpiler generates a three-layer application architecture in which the LLM is formally excluded from the deterministic layers and may operate only within constraints emitted by them.
 
-% =====================================================================
-%  2. BACKGROUND AND RELATED WORK
-% =====================================================================
+We demonstrate the approach through an end-to-end worked example in which the same \texttt{.epi} program runs against both a frontier cloud LLM and a small local open-weight model. The example shows that a low-confidence misclassification is intercepted as required by the type contract before it reaches persistent application state. This demonstration is not intended as a controlled empirical study, but as evidence that the proposed language and transpiler can enforce the intended boundary in generated code.
+
+The central claim of this paper is intentionally limited in scope: \textbf{LLM hallucination cannot be prevented, but it can be contained by construction at a type-system boundary in generated code.}
+
 \section{Background and Related Work}
+\label{sec:related}
 
-Epi sits at the intersection of three lines of work.
+Epi is positioned at the intersection of three related strands of research: information-flow control, probabilistic programming, and typed or declarative tools for LLM-augmented software development.
 
-\textbf{Information-flow control.} The Rigid/Epistemic distinction is structurally analogous to the separation of security levels in information-flow analyses. Russo and Sabelfeld~\cite{russo2010} contrast dynamic and static flow-sensitive analyses, both of which encode non-interference between value domains. Epi adapts this discipline to \emph{epistemic provenance} --- whether a value originated from deterministic code or from probabilistic inference --- rather than to confidentiality levels. The transpiler enforces non-interference by emitting validation at every domain crossing.
+A first point of contact is information-flow control (IFC), the discipline of tracking how values in distinct domains, classically \emph{public} and \emph{secret}, may propagate through a program, and of rejecting programs that leak one into the other. Sabelfeld and Myers~\cite{sabelfeld2003} survey the language-based form of this discipline, in which the type system itself enforces a \emph{non-interference} property: the observable outputs of a program must not depend on its secret inputs. The Rigid/Epistemic distinction in Epi is structurally analogous, with \emph{epistemic provenance} taking the place of confidentiality. Russo and Sabelfeld~\cite{russo2010}, for example, contrast dynamic and static flow-sensitive analyses that encode forms of non-interference between value domains. Epi adapts this general discipline to \emph{epistemic provenance} (whether a value originated from deterministic code or from probabilistic inference) rather than to confidentiality levels. The transpiler enforces non-interference by emitting validation at every domain crossing.
 
-\textbf{Probabilistic programming.} Probabilistic programming languages such as ProbZelus~\cite{baudart2020} and SlicStan~\cite{gorinova2019} embed distributions as first-class constructs and distinguish deterministic from probabilistic computation. Epi draws on this lineage but operates one layer higher: it orchestrates pre-trained model endpoints rather than implementing inference algorithms.
+A second related tradition is probabilistic programming. Languages such as ProbZelus~\cite{baudart2020} and SlicStan~\cite{gorinova2019} provide explicit constructs for representing probabilistic computation, often treating distributions as first-class elements and distinguishing deterministic computation from probabilistic inference. Epi shares with this literature the concern that uncertainty should be represented explicitly in the language rather than hidden inside ordinary values. However, its goal is different: rather than specifying models or compiling inference procedures, Epi operates at the level of LLM-augmented software systems, orchestrating calls to pre-trained model endpoints rather than implementing inference algorithms.
 
-\textbf{Typed LLM signatures and full-stack DSLs.} BAML~\cite{baml} provides typed signatures for LLM functions, and DSPy~\cite{khattab2023dspy} compiles declarative signatures into optimized prompts. Both operate at the granularity of a single LLM call. Epi lifts typed signatures to \emph{whole-application generation}: database, middleware, validators, and UI scaffolding emitted from one source. Wasp~\cite{wasp} is a full-stack DSL targeting React and Node, but it has no type-level distinction for AI-inferred values. What separates Epi from all three is the epistemic type discipline itself: audit-by-construction is a property of the type, not a feature the developer can forget to add.
+Epi also relates to recent work on typed interfaces for LLMs and declarative AI programming. BAML~\cite{baml} provides typed signatures for LLM functions, while DSPy~\cite{khattab2023dspy} compiles declarative signatures into optimized prompting strategies. These systems make important contributions by giving more structure to interactions with language models, but they typically operate at the level of individual LLM calls or prompt modules. Epi extends this idea to the level of whole-application generation: rather than typing only a model invocation, Epi uses a single source specification to generate database structures, middleware, validators, and user-interface scaffolding. In this respect, it also connects to full-stack domain-specific languages such as Wasp~\cite{wasp}, which targets React and Node applications from a high-level specification but does not encode a type-level distinction for AI-inferred values. What separates Epi from all three is the epistemic type discipline itself: audit-by-construction is a property of the type, not a feature the developer can forget to add.
 
-% =====================================================================
-%  3. THE EPISTEMIC TYPE SYSTEM
-% =====================================================================
 \section{The Epistemic Type System}
 \label{sec:type-system}
 
-In Epi, every value belongs to one of two type domains.
+In Epi, every value belongs to one of two epistemic domains in the type system: \emph{Rigid} or \emph{Epistemic}.
 
 \textbf{Rigid types} are deterministic and have no AI involvement:
 \begin{center}
@@ -159,56 +168,112 @@ pulse_decl     ::= "Pulse" IDENT "{" pulse_body "}"
 A field declared with an epistemic type imposes obligations on the generated code:
 
 \begin{verbatim}
-risco: AI.Enum(Alto, Medio, Baixo,
-               strict: true,
-               confidence_threshold: 0.85)
+risk: AI.Enum(High, Medium, Low,
+              strict: true,
+              confidence_threshold: 0.85)
 \end{verbatim}
 
-This single declaration requires the transpiler to emit, in the output project, four artifacts:
-
-\begin{enumerate}
-  \item A \textbf{database column} of compatible storage type.
-  \item A \textbf{runtime validator} (a Zod schema in TypeScript output) that rejects values outside the declared enum.
-  \item An \textbf{LLM inference call} wrapped to return JSON containing the value and a \texttt{\_confidence} field in $[0,1]$.
-  \item A \textbf{confidence-aware dispatch}: if reported confidence is below the threshold, route to a Checkpoint endpoint for human review; otherwise validate and persist.
-\end{enumerate}
+Here \texttt{High}, \texttt{Medium}, and \texttt{Low} are the only admissible labels; \texttt{strict}
+forbids any value outside that set; and \texttt{confidence\_threshold} is the minimum
+self-reported confidence below which the value is not persisted but routed to human
+review. A second epistemic type, \texttt{AI.Score}, illustrates that the same discipline
+applies to numeric inference: \texttt{clarity: AI.Score(min: 0, max: 5, confiden\-ce\_threshold: 0.7)}
+constrains the model to an integer range rather than an enumeration, and the transpiler
+emits the corresponding bound check in the validator. In both cases the declaration is a
+\emph{contract}, not a hint. The single \texttt{risk} declaration above requires the transpiler
+to emit, in the output project, four artifacts:
+\begin{description}
+  \item[(a)] A \textbf{database column} of compatible storage type.
+  \item[(b)] A \textbf{runtime validator}, emitted as a Zod~\cite{zod} schema in the TypeScript output. Zod is a schema-declaration library whose objects parse an incoming value at runtime and raise an error when it falls outside the declared shape; here the generated schema rejects any value outside the declared enum.
+  \item[(c)] An \textbf{LLM inference call} wrapped to return JSON containing the value and a \texttt{\_confidence} field in $[0,1]$.
+  \item[(d)] A \textbf{confidence-aware dispatch}: if reported confidence is below the threshold, route to a Checkpoint endpoint for human review; otherwise validate and persist.
+\end{description}
 
 None of these artifacts is optional: a type-correct Epi program cannot omit any of them, because the type itself forces their emission. This is the central design choice: the \emph{type carries an obligation that the transpiler discharges in the generated code}. In Pierce's terms~\cite{pierce2002}, the transpiler refuses to emit programs that persist unvalidated AI output. The invariant we maintain informally is the following: for every well-typed Epi program, every path from an \texttt{AI.*}-typed expression to a persistence sink in the generated code passes through a validator on that type. Section~\ref{sec:discussion} discusses why we describe this invariant as informal in the current stage.
 
-Crucially, typed-signature DSLs such as BAML and DSPy generate only artifact~(3) above; Epi additionally generates (1), (2), and (4) as structural consequences of the same declaration.
+Crucially, typed-signature DSLs such as BAML and DSPy generate only artifact~(c) above; Epi additionally generates (a), (b), and (d) as structural consequences of the same declaration.
 
-\textbf{The five primitives.} Programs are composed of \textbf{Entity} declarations (typed schemas), \textbf{Guard} declarations (authorization predicates over the request context), \textbf{Pulse} declarations (AI execution units with prompt files, temperature, fallback strategies), \textbf{Pipeline} declarations (composed Pulse flows with error policies), and \textbf{Lens} declarations (UI surface descriptors). Of these, only Pulse and the epistemic fields within Entity invoke the AI; the others are deterministic.
+Epi programs are composed of five main primitives: \textbf{Entity} declarations, which define typed schemas; \textbf{Guard} declarations, which specify authorization predicates over the request context; \textbf{Pulse} declarations, which represent AI execution units configured with prompt files, temperature settings, and fallback strategies; \textbf{Pipeline} declarations, which compose Pulse flows with explicit error policies; and \textbf{Lens} declarations, which describe user-interface surfaces. Among these primitives, only Pulse and the epistemic fields within Entity invoke the AI, while the remaining constructs are deterministic. This design reinforces the separation between conventional computation and probabilistic inference within the language.
 
-\textbf{Trace and Checkpoint.} A Pulse may decompose into a sequence of \emph{Trace} steps. Each Trace can \texttt{Expose} intermediate reasoning fields and pause at a \texttt{Checkpoint} for human review before the next step proceeds. The transpiler emits an inspect/resume HTTP API and a persistent audit trail of each approval or correction. The mechanism targets high-stakes flows --- educational assessment, clinical pre-screening, legal triage --- where the reasoning must be auditable, not only the outcome.
+A Pulse may also be decomposed into a sequence of \emph{Trace} steps. Each Trace can \texttt{Expose} intermediate reasoning fields and pause execution at a \texttt{Checkpoint} for human review before the next step proceeds. The following Pulse illustrates the constructs together:
 
-\textbf{Bayesian update.} An \texttt{AI.Enum} field may declare a prior distribution over its labels. The transpiler emits a Bayesian-update function that combines the prior with the model's reported likelihoods via Bayes' rule. The posterior couples model output with domain base rates rather than overwriting them.
+\begin{verbatim}
+Pulse TriageNote {
+  Input:   Record
+  Protect: Guard.CliniciansOnly
+  Trace Interpret {
+    Execute: AI.reason(
+      source: Input.note,
+      prompt: file("interpret.md"))
+    Expose:     findings, severity
+    Checkpoint: ReviewRequired(role: "Clinician")
+  }
+  Output: Record.risk
+}
+\end{verbatim}
+
+Informally, the Pulse executes as follows. \texttt{Protect} discharges the named Guard before any inference runs, so an unauthenticated request never reaches the model. The \texttt{Interpret} Trace then issues one AI call and binds the fields listed in \texttt{Expose} from the model's JSON output. Because the Trace declares a \texttt{Checkpoint}, execution suspends and the exposed fields are surfaced through a generated inspect/resume HTTP endpoint; the step resumes only after a user in the \texttt{"Clinician"} role approves or corrects them, and every such decision is appended to a persistent audit trail. The value finally written to \texttt{Record.risk} is thus the \texttt{AI.Enum} declared earlier, now guaranteed to be validated and, when uncertain, reviewed. This mechanism is intended for high-stakes workflows, such as educational assessment, clinical pre-screening, and legal triage, where it is not sufficient to audit only the final output: the reasoning process itself must also be inspectable. In addition, an \texttt{AI.Enum} field may declare a prior distribution over its labels, in which case the transpiler emits a Bayesian-update function that combines the prior with the model's reported likelihoods via Bayes' rule. The posterior couples model output with domain base rates rather than overwriting them.
 
 We now describe how a Lark/EBNF grammar and these typing constraints become a runnable Next.js project.
 
-% =====================================================================
-%  4. TRANSPILER ARCHITECTURE
-% =====================================================================
 \section{Transpiler Architecture}
 
-The Epi transpiler is organized in three layers. Layer~1 parses the \texttt{.epi} source via a Lark grammar into a typed AST. Layer~2, the \emph{Rigid Generator}, emits all deterministic artifacts: Prisma schema, Next.js routes, authorization middleware, and Zod validators. Layer~3, the \emph{Epistemic Generator}, emits LLM call wrappers, Trace and Checkpoint infrastructure, and Bayesian update functions. One \texttt{.epi} source therefore replaces the four grammars enumerated in P2.
+The Epi transpiler is organized into three layers. The first layer parses the \texttt{.epi} source with the Lark grammar into an abstract syntax tree and then annotates each field node with its domain tag, \emph{rigid} or \emph{epistemic}, taken directly from the \texttt{type\_expr} production of Section~\ref{sec:type-system}. This tag is the pivot of the whole design: generator dispatch is a case split on it. The second layer, the \emph{Rigid Generator}, walks the rigid nodes and emits the deterministic artifacts, including the Prisma schema, Next.js routes, authorization middleware, and Zod validators. The third layer, the \emph{Epistemic Generator}, walks the epistemic nodes and emits the components associated with AI-mediated execution, such as LLM call wrappers, Trace and Checkpoint infrastructure, and Bayesian update functions. Because an epistemic node cannot be lowered without also emitting its validator and its confidence-aware dispatch, the four artifacts of Section~\ref{sec:type-system} are produced by a single traversal rather than left to the developer. As a result, a single \texttt{.epi} source replaces the several grammars identified in P2, consolidating database, API, interface, and LLM-related logic within one declarative specification.
 
-The LLM is formally excluded from Layers~1 and~2; the deterministic layer encodes the constraints, and the epistemic layer can only operate within them. The structural similarity to the \emph{standard library / user code} split in mainstream type-system implementations is intentional: the constraints are not a runtime check bolted on afterward, but a compile-time invariant the runtime cannot violate without failing closed.
+A central design principle of this architecture is that the LLM is formally excluded from Layers~1 and~2. The deterministic layer defines and encodes the constraints under which the application operates, while the epistemic layer can only act within those constraints. This separation is intentionally similar to the distinction between \emph{standard library} and \emph{user code} in mainstream type-system implementations: the constraints are not runtime checks added after the fact, but compile-time invariants that the generated runtime cannot violate without failing closed.
 
-\textbf{Provider-agnostic LLM client.} Layer~3 emits a single file, \texttt{lib/llm-client.ts}, that abstracts the LLM provider behind a uniform \texttt{llmCall(params)} interface. Runtime environment variables (\texttt{EPI\_AI\_PROVIDER}, \texttt{EPI\_AI\_MODEL}, \texttt{EPI\_AI\_BASE\_URL}) select between Anthropic Claude~\cite{anthropic} and any OpenAI-compatible endpoint; we target Ollama~\cite{ollama} for local open-weight models. The epistemic contract --- JSON output containing a \texttt{\_confidence} field, parseable by the Zod schema --- is enforced uniformly across providers. Provider choice is a deployment concern, not a code change.
+Layer~3 also emits a provider-agnostic LLM client, implemented as a single \texttt{lib/llm-client.ts} file, which abstracts the model provider behind a uniform \texttt{llmCall(params)} interface. Runtime environment variables (including \texttt{EPI\_AI\_PROVIDER}, \texttt{EPI\_AI\_MODEL}, and \texttt{EPI\_AI\_BASE\_URL}) select between Anthropic Claude~\cite{anthropic} and any OpenAI-compatible endpoint, with Ollama~\cite{ollama} targeted for local open-weight models. Across these providers, the epistemic contract remains the same: the model output must be valid JSON, include a \texttt{\_confidence} field, and be parseable by the corresponding Zod schema. In this architecture, the choice of provider is therefore treated as a deployment concern rather than a code-level change.
 
-% =====================================================================
-%  5. DEMONSTRATION (worked example, single scenario)
-% =====================================================================
 \section{Demonstration}
 \label{sec:demonstration}
 
 We exercise the system end-to-end on a single educational scenario, presented as a worked example rather than a controlled study; a controlled comparison against hand-written baselines on correctness coverage, audit completeness, and developer time is planned for the next phase.
 
-The \texttt{.epi} source declares one Entity \texttt{Submissao} (student answer) with an epistemic field \texttt{avaliacao: AI.Enum(Cor\-reto, Parcial, Incorreto, prior:~Distribution(0.40, 0.45, 0.15), confidence\_thres\-hold:~0.85)}, one Guard for teacher authentication, one Pulse \texttt{AvaliarResposta} invoking \texttt{AI.classify} with \texttt{on\_low\_confidence:~Checkpoint.ReviewRequired(role:~"Pro\-fessor")}, and one Pipeline. The source is 30 lines; the transpiled project is 13 files and roughly 700 lines of TypeScript and Prisma schema.
+The complete \texttt{.epi} source is 30 lines and is reproduced below in full:
+
+\begin{verbatim}
+Entity Submission {
+  id:     UUID(auto),
+  prompt: Text,
+  answer: Text,
+  evaluation: AI.Enum(
+    Correct, Partial, Incorrect,
+    strict: true,
+    prior: Distribution(Correct: 0.40,
+      Partial: 0.45, Incorrect: 0.15),
+    confidence_threshold: 0.85)
+}
+
+Guard TeachersOnly {
+  Condition: Auth.Role == "Teacher"
+}
+
+Pulse EvaluateAnswer {
+  Input:   Submission
+  Protect: Guard.TeachersOnly
+  Process:
+    Execute: AI.classify(
+      source: Input.answer,
+      prompt: file("evaluate.md"),
+      temperature: 0.1,
+      on_low_confidence:
+      Checkpoint.ReviewRequired(role: "Teacher"),
+      on_fail:
+      Fallback.ManualReview(Queue: "Teachers"))
+  Output: Submission.evaluation
+}
+
+Pipeline AssessmentFlow {
+  Flow: EvaluateAnswer
+  On_Error: Retry(max: 2, backoff: exponential)
+}
+\end{verbatim}
+
+The single epistemic field \texttt{evaluation} declares a prior over its labels and a confidence threshold; the Pulse routes low-confidence outputs to a teacher checkpoint and malformed outputs to a manual-review queue. From these 30 lines the transpiler emits 13 files, roughly 700 lines of TypeScript and Prisma schema.
 
 We compile the same \texttt{.epi} source twice and run both deployments unchanged: (a) against \textbf{Anthropic Claude Sonnet~4} in the cloud; (b) against \textbf{Qwen~2.5 3B Instruct} (Q4\_K\_M, $\sim$1.9~GB) served locally by Ollama on consumer hardware (Apple Silicon, 16~GB RAM). The only difference is the value of \texttt{EPI\_AI\_PROVIDER} in the deployment's \texttt{.env} file. Each deployment receives the same four inputs against the prompt ``What is photosynthesis?''. Results appear in Table~\ref{tab:evaluation}.
 
-\begin{table*}[t]
+\begin{table*}
   \caption{Four inputs exercised end-to-end against the locally generated Next.js project, compiled against two LLM providers. The fourth row injects a deliberately malformed JSON output to exercise the schema validator path. Latencies measured wall-clock on Apple Silicon (16~GB RAM).}
   \label{tab:evaluation}
   \small
@@ -217,64 +282,57 @@ We compile the same \texttt{.epi} source twice and run both deployments unchange
     \textbf{Student answer} & \textbf{Qwen 2.5 3B output} & \textbf{Claude Sonnet 4 output} & \textbf{Boundary action} & \textbf{Lat.}\\
     \midrule
     Textbook-correct full definition
-      & \texttt{\{"avaliacao":"Parcial", "\_confidence":0.8\}}
-      & \texttt{\{"avaliacao":"Correto", "\_confidence":0.93\}}
-      & Qwen: $0.8<0.85 \Rightarrow$ Checkpoint to Professor. Claude: validated $\Rightarrow$ \texttt{"Correto"} persisted.
+      & \texttt{\{"evaluation":"Partial", "\_confidence":0.8\}}
+      & \texttt{\{"evaluation":"Correct", "\_confidence":0.93\}}
+      & Qwen: $0.8<0.85 \Rightarrow$ Checkpoint to Teacher. Claude: validated $\Rightarrow$ \texttt{"Correct"} persisted.
       & 2.6\,s / 1.1\,s \\[0.4em]
     ``Plants eat sunlight.''
-      & \texttt{\{"avaliacao":"Incorreto", "\_confidence":0.9\}}
-      & \texttt{\{"avaliacao":"Incorreto", "\_confidence":0.95\}}
-      & Both validated $\Rightarrow$ \texttt{"Incorreto"} persisted.
+      & \texttt{\{"evaluation":"Incorrect", "\_confidence":0.9\}}
+      & \texttt{\{"evaluation":"Incorrect", "\_confidence":0.95\}}
+      & Both validated $\Rightarrow$ \texttt{"Incorrect"} persisted.
       & 0.8\,s / 0.9\,s \\[0.4em]
     ``Photosynthesis is my dog's name.''
-      & \texttt{\{"avaliacao":"Incorreto", "\_confidence":0.9\}}
-      & \texttt{\{"avaliacao":"Incorreto", "\_confidence":0.97\}}
-      & Both validated $\Rightarrow$ \texttt{"Incorreto"} persisted.
+      & \texttt{\{"evaluation":"Incorrect", "\_confidence":0.9\}}
+      & \texttt{\{"evaluation":"Incorrect", "\_confidence":0.97\}}
+      & Both validated $\Rightarrow$ \texttt{"Incorrect"} persisted.
       & 0.8\,s / 0.8\,s \\[0.4em]
     Induced malformed model output (control)
       & \texttt{\{"unexpected":"object"\}}
-      & ---
+      & n/a
       & Zod rejects $\Rightarrow$ \texttt{Fallback.ManualReview} queue.
-      & --- \\
+      & n/a \\
     \bottomrule
   \end{tabular}
 \end{table*}
 
-\textbf{Observation.} The first row is the contribution of this evaluation. The small model misclassified a textbook-correct answer as \texttt{"Parcial"} --- a false negative that, if persisted, would unfairly penalize the student. The model's own reported confidence --- 0.8 --- fell below the type-declared threshold of 0.85. The transpiler-emitted dispatch routed the case to a human reviewer \emph{before} it reached the database. \textbf{The developer wrote no code for this behavior.} It follows from the single annotation \texttt{confidence\_threshold:~0.85} on the type, which the transpiler discharged in Layer~3. By contrast, BAML and DSPy would type-validate the model output; only Epi additionally emits the Checkpoint dispatch and the audit trail without developer code.
+The first row of the evaluation is the central contribution of this demonstration. In this case, the small model misclassified a textbook-correct answer as \texttt{"Partial"}, producing a false negative that, if persisted, would have unfairly penalized the student. However, the model's own reported confidence, 0.8, fell below the threshold declared in the type definition, set at 0.85. As a result, the dispatch logic emitted by the transpiler routed the case to a human reviewer \emph{before} it reached the database. The developer did not write any specific code for this behavior. Instead, it follows from the single type annotation \texttt{confidence\_threshold:~0.85}, which the transpiler discharges in Layer~3, together with the Checkpoint dispatch and the audit trail, none of which the developer had to write.
 
-\textbf{Provider parity.} Submitting the same three real inputs to Anthropic Claude Sonnet~4 classified the textbook-correct answer as \texttt{"Correto"} with confidence above 0.9, validating directly. The pipeline behaves identically at the boundary across both providers; what differs is absolute accuracy and latency. This confirms that the epistemic contract is enforced independently of the inference engine.
+The same three real inputs were also submitted to Anthropic Claude Sonnet~4. In that setting, the textbook-correct answer was classified as \texttt{"Correct"} with confidence above 0.9 and therefore passed validation directly. The pipeline thus behaves identically at the boundary across both providers, even though absolute accuracy and latency differ. This result supports the claim that the epistemic contract is enforced independently of the inference engine used at deployment time.
 
-\textbf{Hallucination containment.} The fourth row of Table~\ref{tab:evaluation} exercises the schema-validator path with a deliberately malformed JSON. The Zod schema rejects the value and the transpiler-emitted \texttt{Fallback.ManualReview} routes the request to a manual queue. Once more, no handwritten error path was required.
+The fourth row of Table~\ref{tab:evaluation} exercises the schema-validation path through a deliberately malformed JSON response. In this case, the Zod schema rejects the value, and the transpiler-emitted \texttt{Fallback.ManualReview} mechanism routes the request to a manual review queue. Again, no handwritten error path is required. This example illustrates the central containment claim of Epi: hallucination or malformed model output is not prevented at the source, but it is prevented from silently crossing the type-system boundary into persistent application state.
 
 The demonstration above shows the mechanism on one scenario; the section that follows marks the boundaries of what it does not yet establish.
 
-% =====================================================================
-%  6. DISCUSSION AND LIMITATIONS
-% =====================================================================
 \section{Discussion and Limitations}
 \label{sec:discussion}
 
-\textbf{Type-system formalization.} The current type-system specification is informal: we present a working transpiler and an empirical demonstration, not a mechanized soundness proof. The invariant we describe in Section~\ref{sec:type-system} --- \emph{every path from an \texttt{AI.*}-typed expression to a persistence sink passes through a validator on that type} --- is a non-interference property between the rigid and epistemic value spaces. A mechanized treatment in Coq or Agda, including a typing judgment and a soundness theorem, is future work.
+The current specification of Epi's type system is implementation-oriented rather than fully mechanized. The paper presents a working transpiler and an empirical demonstration, but does not yet provide a mechanized soundness proof. The invariant described in Section~\ref{sec:type-system}, namely that every path from an \texttt{AI.*}-typed expression to a persistence sink must pass through a validator for that type, can be understood as a non-interference property between rigid and epistemic value spaces. A full formal treatment, for example in a proof assistant such as Coq~\cite{bertot2004} or Agda~\cite{norell2009}, would require the definition of typing judgments, operational semantics, and a soundness theorem, and is left as future work.
 
-\textbf{Coverage of targets.} The transpiler currently emits a complete Next.js project. A FastAPI target is partially implemented and gated in the CLI until it is complete. This is an engineering limitation, not an essential property of the design.
+A second open question concerns how the \texttt{confidence\_threshold} is chosen. In the current design it is a developer-supplied constant: the value below which an inferred result is treated as too uncertain to persist without review. This places the calibration burden on the developer, and a fixed constant ignores that a model's self-reported confidence is not itself guaranteed to be well calibrated. We see three more principled routes, which we leave to future work: deriving the threshold from a labelled validation set so that it targets a chosen precision on human-reviewed cases; adjusting it per class from the declared \texttt{prior} distribution, so that rarer labels demand higher confidence; and recalibrating reported confidences before comparison. In all three, the language surface would be unchanged, since the threshold is already a first-class attribute of the epistemic type; only the value bound to it would be computed rather than written by hand.
 
-\textbf{Lens.Mood.} The Lens primitive includes a \texttt{Mood} declaration that currently maps keywords to UI utility classes via a deterministic lookup table. It is the weakest part of the current design and is marked experimental in the documentation.
+The current implementation also has limitations in terms of target coverage. At present, the transpiler emits a complete Next.js project, while a FastAPI target is only partially implemented and remains gated in the CLI until the implementation is complete. This limitation is therefore an engineering constraint of the current prototype rather than an essential property of the language design.
 
-% =====================================================================
-%  7. CONCLUSION
-% =====================================================================
+Finally, the Lens primitive includes a \texttt{Mood} declaration that currently maps keywords to UI utility classes through a deterministic lookup table. This mechanism is the weakest element of the present design, because its connection to the epistemic type discipline is less central than that of Entity, Pulse, Trace, or Checkpoint. For this reason, it is marked as experimental in the documentation.
+
 \section{Conclusion and Future Work}
 
-LLM hallucination is a property of the underlying inference, not of the surrounding code; it cannot be prevented at the type-system level. It can, however, be \emph{contained}. A type discipline that distinguishes deterministic from epistemic provenance can require --- by construction, in generated code --- that every AI-inferred value pass a validator, report its confidence, and surface for human review when uncertain. We have implemented this discipline as a language and a transpiler, exercised it end-to-end against a frontier cloud model and a small local open-weight model, and shown that the boundary catches a misclassification that would otherwise reach a database of record. Three directions follow: a mechanized formalization of the type system, a controlled comparison against hand-written baselines on correctness and audit coverage, and a classroom study of Trace+Checkpoint adoption in educational assessment.
+LLM hallucination is a property of the underlying inference, not of the surrounding code; it cannot be prevented at the type-system level. It can, however, be \emph{contained}. A type discipline that distinguishes deterministic from epistemic provenance can require, by construction in generated code, that every AI-inferred value pass a validator, report its confidence, and surface for human review when uncertain. We have implemented this discipline as a language and a transpiler, exercised it end-to-end against a frontier cloud model and a small local open-weight model, and shown that the boundary catches a misclassification that would otherwise reach a database of record. The contribution is threefold: an epistemic type system that separates rigid from AI-inferred values; a transpiler that discharges the resulting obligations across a whole generated application; and a worked demonstration that the boundary holds identically across two very different inference engines. Where typed-LLM interfaces such as BAML and DSPy structure a single model call, Epi is, to our knowledge, the first to make audit-by-construction a property of the type that propagates from the database column to the human-review checkpoint. Three directions follow: a mechanized formalization of the type system, a controlled comparison against hand-written baselines on correctness and audit coverage, and a classroom study of Trace+Checkpoint adoption in educational assessment.
 
-% =====================================================================
-%  ARTIFACT AVAILABILITY (required by CBSoft template — not numbered)
-% =====================================================================
 \section*{Artifact Availability}
 
-Epi is open-source software under the Apache 2.0 license. The full source --- language, transpiler, grammar, parser, tests, the \texttt{avaliacao-simples.epi} program exercised in Section~\ref{sec:demonstration}, and the generated TypeScript artifacts --- is publicly available. The PyPI distribution can be installed with \texttt{pip install epi-lang}. A landing page summarizes the project, its scope, and known limitations.
-
-\textit{[Repository URL and landing page URL are omitted in this anonymized submission and will be added in the camera-ready version.]}
+Epi is open-source software under the Apache 2.0 license. The full source (language, transpiler, grammar, parser, tests, the educational-assessment example program exercised in Section~\ref{sec:demonstration}, and the generated TypeScript artifacts) is publicly available at \url{https://github.com/RandMelville/epi-lang}. The PyPI distribution can be installed with \texttt{pip install epi-lang}, and a landing page summarizing the project, its scope, and known limitations is available at \url{https://randmelville.github.io/epi-lang}.
+% CAMERA-READY TODO: after cutting a GitHub Release, add the Zenodo archival DOI, e.g.:
+% An archival snapshot of the version described in this paper is deposited on Zenodo (DOI: 10.5281/zenodo.XXXXXXX).
 
 % =====================================================================
 %  ACKNOWLEDGEMENTS (uncomment in the camera-ready version)
@@ -285,11 +343,41 @@ Epi is open-source software under the Apache 2.0 license. The full source --- la
 % Prof. Fernando Magno Quintão Pereira (Compilers Lab, UFMG) for
 % pointing us to the information-flow-control literature as a
 % structural analog.
+% (Item 13: this section may also carry a declaration on the use of
+% generative AI tools, if the CfP requires one.)
 
-% =====================================================================
-%  REFERENCES
-% =====================================================================
+%% The next two lines define the bibliography style to be used, and
+%% the bibliography file.
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{refs}
 
 \end{document}
+
+% ============================================================
+% CBSoft ACM-like Template – Author Checklist
+% ============================================================
+%
+% 1. Remove CCS Concepts                                            [OK]
+% 2. Remove ACM footer (\renewcommand\footnotetextcopyrightpermission) [OK]
+% 3. Remove ACM Reference Format (\setcopyright{none} +
+%    \settopmatter{printacmref=false})                              [OK]
+% 4. Short title fits column width (\shorttitle)                    [OK]
+% 5. \shortauthors set to "Rebouças and Barone"                     [OK]
+% 6. Author format below title (\author / \affiliation / \email)    [OK]
+% 7. All author emails included                                     [OK]
+% 8. Section titles in Title Case                                   [OK]
+% 9. Artifact Availability section (unnumbered, before Acks)        [OK]
+% 10. Abstract is a single paragraph                                [OK]
+% 11. Keywords are comma-separated, first letter capitalized        [OK]
+% 12. References use ACM-Reference-Format (refs.bib)                [OK]
+% 13. Acknowledgements: commented out (camera-ready only)           [OK]
+% 14. No received/revised/accepted dates                            [OK]
+% 15. Figure captions below figures (no figures used)               [n/a]
+% 16. Symposium name in page header: SBLP 2026                      [OK]
+% 17. Camera-ready: remove colored author names / links             [n/a]
+% 18. For JEMS3 double-blind submission, switch documentclass to
+%     \documentclass[sigconf,anonymous,review]{acmart}
+% 19. SBES Tools Track demo video                                   [n/a]
+% 20. SBES Industry Track author biographies                        [n/a]
+%
+% ============================================================
