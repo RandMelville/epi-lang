@@ -12,6 +12,7 @@ authors:
     given-names: "Eliseo"
     affiliation: "PPGIE, Universidade Federal do Rio Grande do Sul (UFRGS)"
 version: "0.3.1"
+doi: "10.5281/zenodo.21433256"
 license: Apache-2.0
 repository-code: "https://github.com/RandMelville/epi-lang"
 url: "https://randmelville.github.io/epi-lang"
@@ -21,6 +22,3 @@ keywords:
   - "large language models"
   - "code generation"
   - "information-flow control"
-# TODO: after cutting the v0.3.1 GitHub Release and enabling the Zenodo
-# integration, add the archival DOI here, e.g.:
-# doi: "10.5281/zenodo.XXXXXXX"
