@@ -2,7 +2,7 @@
 // Epi v0.3 — Formal Grammar (EBNF via Lark)
 // Epistemic Programming Interface
 // Author: Randerson Rebouças (UFRGS)
-// License: MIT
+// License: Apache-2.0
 //
 // v0.3 additions:
 //   - Trace + Checkpoint: depuração interativa de raciocínio (Rosa)

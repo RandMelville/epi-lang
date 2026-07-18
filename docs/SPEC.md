@@ -6,7 +6,7 @@
 **Author:** Randerson Rebouças (UFRGS — Doutorado em Computação na Educação)
 **Version:** 0.3
 **Date:** 2026-03-25
-**License:** MIT
+**License:** Apache-2.0
 
 ---
 
