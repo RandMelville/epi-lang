@@ -176,10 +176,9 @@ risk: AI.Enum(High, Medium, Low,
 Here \texttt{High}, \texttt{Medium}, and \texttt{Low} are the only admissible labels; \texttt{strict}
 forbids any value outside that set; and \texttt{confidence\_threshold} is the minimum
 self-reported confidence below which the value is not persisted but routed to human
-review. A second epistemic type, \texttt{AI.Score}, illustrates that the same discipline
-applies to numeric inference: \texttt{clarity: AI.Score(min: 0, max: 5, confiden\-ce\_threshold: 0.7)}
-constrains the model to an integer range rather than an enumeration, and the transpiler
-emits the corresponding bound check in the validator. In both cases the declaration is a
+review. A second epistemic type, \texttt{AI.Score}, applies the same discipline to numeric
+inference: \texttt{AI.Score(min: 0, max: 5)} bounds the model to a numeric range
+rather than an enumeration, and the transpiler emits the matching bound check. In both cases the declaration is a
 \emph{contract}, not a hint. The single \texttt{risk} declaration above requires the transpiler
 to emit, in the output project, four artifacts:
 \begin{description}
@@ -299,7 +298,7 @@ We compile the same \texttt{.epi} source twice and run both deployments unchange
     Induced malformed model output (control)
       & \texttt{\{"unexpected":"object"\}}
       & n/a
-      & Zod rejects $\Rightarrow$ \texttt{Fallback.ManualReview} queue.
+      & Zod rejects $\Rightarrow$ \texttt{Fallback.\allowbreak ManualReview} queue.
       & n/a \\
     \bottomrule
   \end{tabular}
@@ -309,7 +308,7 @@ The first row of the evaluation is the central contribution of this demonstratio
 
 The same three real inputs were also submitted to Anthropic Claude Sonnet~4. In that setting, the textbook-correct answer was classified as \texttt{"Correct"} with confidence above 0.9 and therefore passed validation directly. The pipeline thus behaves identically at the boundary across both providers, even though absolute accuracy and latency differ. This result supports the claim that the epistemic contract is enforced independently of the inference engine used at deployment time.
 
-The fourth row of Table~\ref{tab:evaluation} exercises the schema-validation path through a deliberately malformed JSON response. In this case, the Zod schema rejects the value, and the transpiler-emitted \texttt{Fallback.ManualReview} mechanism routes the request to a manual review queue. Again, no handwritten error path is required. This example illustrates the central containment claim of Epi: hallucination or malformed model output is not prevented at the source, but it is prevented from silently crossing the type-system boundary into persistent application state.
+The fourth row of Table~\ref{tab:evaluation} exercises the schema-validation path through a deliberately malformed JSON response. In this case, the Zod schema rejects the value, and the transpiler-emitted \texttt{Fallback.\allowbreak ManualReview} mechanism routes the request to a manual review queue. Again, no handwritten error path is required. This example illustrates the central containment claim of Epi: hallucination or malformed model output is not prevented at the source, but it is prevented from silently crossing the type-system boundary into persistent application state.
 
 The demonstration above shows the mechanism on one scenario; the section that follows marks the boundaries of what it does not yet establish.
 
