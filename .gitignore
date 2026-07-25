@@ -71,3 +71,6 @@ paper/main.pdf
 
 # Generated artifacts
 paper/*.docx
+
+# Epi containment harness — generated apps (1.2 GB of node_modules, rebuilt by eval/setup.sh)
+eval/_run/
