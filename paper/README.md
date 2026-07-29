@@ -96,51 +96,70 @@ You need TeX Live ≥ 2019 (which includes `acmart`).
 
 ## Page budget
 
-- Limit: **4 pages excluding references** (SBLP short paper).
-- Current body is approximately 2,640 words plus one table and two
-  short verbatim blocks (EBNF fragment, one `.epi` snippet). This
-  should fit four pages in `sigconf` two-column layout.
-- If the compiled PDF overflows, apply cuts in priority order:
-  1. Drop the SlicStan or DSPy paragraph in §2.
-  2. Compress P1/P2/P3 in §1 into one paragraph.
-  3. Shorten the EBNF fragment to four productions (`entity_decl`,
-     `field_decl`, `rigid_type`, `epistemic_type`).
-  4. Drop the "Hallucination containment" subsection at the end of §5
-     (the message is implicit in the table's fourth row).
+- The submitted version compiled to 6 pages, and the camera-ready may
+  use one more.
+- The body is now about 4,880 words plus two tables and four verbatim
+  blocks. Confirm the count on Overleaf before uploading; the cut list
+  is in the camera-ready section below.
 
-## Pre-submission checklist
+## Camera-ready (accepted, weak accept from 4 reviewers)
 
-- [ ] Switch to `\documentclass[sigconf,anonymous,review]{acmart}`.
-- [ ] Recompile; verify the byline shows "Anonymous Author(s)".
-- [ ] Re-check that the body has no first-person phrasing that
-      identifies the team.
-- [ ] Re-check that no figure, table, or footnote leaks identifying
-      information (the Artifact Availability section already has a
-      bracketed placeholder for the URL).
-- [ ] Recompile once more; verify reviewer line numbers appear.
-- [ ] Save the PDF and submit via JEMS3:
-      <https://jems3.sbc.org.br/events/462>.
-- [ ] Deadline: **1 June 2026** (firm, no extensions).
+Deadline: **1 August 2026**. Submit via JEMS3:
+<https://jems3.sbc.org.br/events/462>.
 
-## After acceptance
+Applied in this round, mapped to the reviewer that asked for it:
 
-When the paper is accepted and you switch back to the camera-ready
-version:
+- **§5.1 + Table 2**, containment over 40 curated inputs against Qwen
+  2.5 3B and Llama 3.2 1B, with the harness in `eval/`. Answers the
+  "single running example is insufficient" objection raised by
+  reviewers 1, 3 and 4.
+- **Grammar now covers all five declaration forms** (Entity, Guard,
+  Pulse with `pulse_body`, Trace, Pipeline, Lens). Reviewer 3 noted
+  that only Entity and part of Pulse were specified.
+- **Epistemic types other than `AI.Enum`** given a paragraph stating
+  how far containment reaches for each. Reviewer 4.
+- **§4 rewritten to justify the design**, in particular why the
+  generator split is by epistemic domain and not by output artifact.
+  Reviewers 3 and 4.
+- **`_confidence` documented as prompt-elicited**, not derived from
+  logprobs, with the 0.5 default that fails towards review.
+- **Composition order between `prior` and `confidence_threshold`**
+  stated: they do not compose today, and the posterior comparison is
+  named as future work in §6.
+- **Trace audit record described accurately**: the emitted store is an
+  in-process map behind a save/get/update interface, not a durable
+  backend. The previous wording claimed a persistent audit trail.
+- **BAML/DSPy comparison reduced** from five mentions to four, each
+  doing distinct work. Reviewer 4 flagged the repetition; reviewer 2
+  asked for the comparison in the abstract and the conclusion, so it
+  cannot go below that.
+- **Portuguese identifier removed** from §5.1 (`Input.resposta_aluno`).
+  Reviewers 2 and 4.
+- **Verbatim blocks reflowed to 42 columns**, which fixes the overfull
+  lines reviewer 2 pointed at (`Checkpoint.ReviewRequired`,
+  `Fallback.ManualReview`, `On_Error: Retry`) and the EBNF, which had
+  the same problem.
+- **Acknowledgements uncommented**, now also thanking the reviewers.
 
-- [ ] Remove `anonymous,review` from the documentclass.
-- [ ] Recompile and verify author names appear.
-- [ ] Uncomment the `\section*{Acknowledgements}` block in `main.tex`.
-- [ ] In `\section*{Artifact Availability}`, replace the bracketed
-      placeholder with the real repository URL and landing-page URL.
-- [ ] Recompile; submit the camera-ready PDF.
+Before uploading:
 
-## Open questions deferred to camera-ready (Tier 4 from the review)
+- [ ] Recompile on Overleaf and check the page count. Prose grew by
+      about 660 words and 14 verbatim lines against the version that
+      compiled to 7 pages, so expect roughly three quarters of a page
+      more. Cut list below if it spills.
+- [ ] If the CfP requires a declaration on the use of generative AI
+      tools, add it to the Acknowledgements section.
+- [ ] Verify no overfull box warnings remain in the log.
 
-- Stability of Qwen's `_confidence` value across multiple runs of the
-  same input. Worth running 5–10 samples and reporting variance in a
-  footnote.
-- Whether `_confidence` is prompt-elicited or computed from token
-  logprobs. State this explicitly in §5.
-- For `AI.Enum` with both `prior` and `confidence_threshold`: is the
-  threshold compared against raw model confidence or against the
-  Bayesian posterior? §3 should specify the composition order.
+Cut list, in priority order, if the page count has to come down:
+
+1. The paragraph in §3 on epistemic types other than `AI.Enum`
+   (~110 words). Costs reviewer 4's request.
+2. The second paragraph of §4, on why the split is by domain
+   (~140 words). Costs the design justification reviewers 3 and 4
+   asked for.
+3. The last paragraph of §5.1, on the three limitations. Honest but
+   the structural result survives without it.
+4. The `Guard` and `Pipeline` blocks of the §5 listing, replaced by
+   one sentence. Breaks the "reproduced in full" claim.
+5. The SlicStan or the Wasp sentence in §2.

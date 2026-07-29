@@ -1,0 +1,55 @@
+@Language: Epi v0.3
+@Goal: "Pedagogical assessment, full-source variant"
+@Database: sqlite
+
+// Second variant used by the containment harness (eval/).
+//
+// Identical to examples/avaliacao-simples.epi, the program reproduced in the
+// paper, except for ONE token: the AI call declares `source: Input` instead of
+// `source: Input.resposta_aluno`, so the model receives the question together
+// with the student's answer.
+//
+// The epistemic contract is unchanged: same enum, same prior, same threshold,
+// same checkpoint, same fallback. The difference isolates the effect of the
+// declared source on how much the boundary can actually contain.
+
+Entity Submissao {
+    id: UUID(auto),
+    enunciado: Text,
+    resposta_aluno: Text,
+    criado_em: DateTime(auto),
+    avaliacao: AI.Enum(
+        Correto, Parcial, Incorreto,
+        strict: true,
+        prior: Distribution(
+            Correto: 0.40,
+            Parcial: 0.45,
+            Incorreto: 0.15
+        ),
+        confidence_threshold: 0.85
+    )
+}
+
+Guard SoProfessores {
+    Condition: Auth.Role == "Professor"
+}
+
+Pulse AvaliarResposta {
+    Input: Submissao
+    Protect: Guard.SoProfessores
+    Process:
+        Execute: AI.classify(
+            source: Input,
+            prompt: file("@prompts/avaliar_simples.md"),
+            temperature: 0.1,
+            confidence_threshold: 0.85,
+            on_low_confidence: Checkpoint.ReviewRequired(role: "Professor"),
+            on_fail: Fallback.ManualReview(Queue: "Professores")
+        )
+    Output: Submissao.avaliacao
+}
+
+Pipeline FluxoAvaliacao {
+    Flow: AvaliarResposta
+    On_Error: Retry(max: 2, backoff: exponential)
+}

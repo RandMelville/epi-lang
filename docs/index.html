@@ -134,7 +134,7 @@
         <div class="flex flex-wrap items-center gap-2 mb-6">
           <span class="pill pill-dark">
             <span class="w-1.5 h-1.5 rounded-full bg-accent-400 animate-pulse"></span>
-            Research at UFRGS · v0.3.1
+            Research at UFRGS · v0.3.2
           </span>
           <a href="https://cbsoft.sbc.org.br/2026/pt/symposiums/sblp/" class="pill pill-dark hover:bg-white/10 transition">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
@@ -553,6 +553,56 @@ Pulse AvaliarResposta {
       </p>
       <p class="text-ink-400 text-base leading-relaxed mt-4">
         The same <code class="!bg-white/10 !border-white/10 !text-accent-300">.epi</code> source compiles unchanged against Anthropic Claude. Provider choice is a runtime <code class="!bg-white/10 !border-white/10 !text-accent-300">.env</code> setting, not a code change.
+      </p>
+    </div>
+
+    <div class="mt-16 pt-16 border-t border-white/10">
+      <div class="max-w-3xl mb-10">
+        <p class="pill pill-dark mb-4">40 curated inputs</p>
+        <h3 class="text-3xl lg:text-4xl font-bold tracking-tight leading-[1.15] mb-5">
+          One scenario shows the boundary can fire. It does not show how often it fires when it should.
+        </h3>
+        <p class="text-lg text-ink-300 leading-relaxed">
+          So we ran the generated project over a curated set of 40 inputs with gold labels, three repeats each, against Qwen 2.5 3B. The set is deliberately loaded with hard cases: right but incomplete answers, fluent answers wrong on one word, items with no defensible single label, and adversarial inputs that try to force a label outside the declared enum. The harness imports the transpiler-emitted Pulse, so the threshold, the validator and the dispatch all run in generated code.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 rounded-xl overflow-hidden border border-white/10">
+        <div class="bg-ink-950 px-6 py-5">
+          <div class="text-3xl font-bold text-white">0</div>
+          <div class="text-sm text-ink-400 mt-1">values outside the declared enum ever persisted</div>
+        </div>
+        <div class="bg-ink-950 px-6 py-5">
+          <div class="text-3xl font-bold text-white">6<span class="text-ink-500 text-base font-normal">/12</span></div>
+          <div class="text-sm text-ink-400 mt-1">wrong values kept out of the database</div>
+        </div>
+        <div class="bg-ink-950 px-6 py-5">
+          <div class="text-3xl font-bold text-white">20<span class="text-ink-500 text-base font-normal">/40</span></div>
+          <div class="text-sm text-ink-400 mt-1">items sent to human review, the cost of that</div>
+        </div>
+        <div class="bg-ink-950 px-6 py-5">
+          <div class="text-3xl font-bold text-white">621<span class="text-ink-500 text-base font-normal">ms</span></div>
+          <div class="text-sm text-ink-400 mt-1">median latency per call, local</div>
+        </div>
+      </div>
+
+      <div class="mt-8 grid lg:grid-cols-2 gap-6">
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-7">
+          <p class="text-sm font-semibold text-emerald-300 mb-3">What holds structurally</p>
+          <p class="text-ink-300 leading-relaxed">
+            No value outside the declared enum reached the persistence path, in any run. Not for lack of trying: repeating the set against a deliberately weaker model, Llama 3.2 1B, one adversarial item drove it to invent the label <code class="!bg-white/10 !border-white/10 !text-rose-300">CORRETÍSSIMO</code> on all three repeats, and the generated validator rejected it into the manual-review queue. Another drove it to emit unparseable output, caught by the same fallback. Neither path was written by hand.
+          </p>
+        </div>
+        <div class="rounded-xl border border-white/10 bg-white/[0.03] p-7">
+          <p class="text-sm font-semibold text-amber-300 mb-3">What it does not buy you</p>
+          <p class="text-ink-300 leading-relaxed">
+            Containment of merely <em>wrong</em> values is bounded by something the type system cannot supply: the model's self-reported confidence has to actually track its errors. The 1B model shows the bound by breaking it, reporting high confidence almost everywhere and escaping with all 18 of its wrong values. A type system can guarantee that an out-of-domain value is never written. It cannot detect a confident, well-formed lie.
+          </p>
+        </div>
+      </div>
+
+      <p class="mt-8 text-ink-400 text-base leading-relaxed max-w-3xl">
+        Changing one token of the <code class="!bg-white/10 !border-white/10 !text-accent-300">.epi</code> source, so the model receives the question along with the answer instead of the answer alone, halves the raw error rate and takes wrong persisted values to zero, at 24 of 40 items sent to review. The harness, the input set with its gold labels, and the raw per-call results are in <code class="!bg-white/10 !border-white/10 !text-accent-300">eval/</code>.
       </p>
     </div>
   </div>

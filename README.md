@@ -270,7 +270,7 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
   title   = {Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code},
   year    = {2026},
   url     = {https://github.com/RandMelville/epi-lang},
-  version = {0.3.1},
+  version = {0.3.2},
   doi     = {10.5281/zenodo.21433256}
 }
 ```
