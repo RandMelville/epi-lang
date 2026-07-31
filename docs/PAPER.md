@@ -1,11 +1,27 @@
+> ⚠️ **Superseded. This is not the accepted paper, and it was never published
+> or submitted anywhere.**
+>
+> This is an early internal working draft from March 2026, kept only for
+> history. It has a different title, a different scope, and it is not kept in
+> sync with the implementation. An earlier version of this file described
+> itself as a preprint submitted to arXiv; that never happened, and the line
+> has been removed.
+>
+> The paper accepted at SBLP 2026 is
+> **"Epi: An Epistemic Type System for Containing LLM Hallucination in
+> Generated Code"**: see
+> [paper/Epi-SBLP2026-camera-ready.pdf](../paper/Epi-SBLP2026-camera-ready.pdf)
+> and its source in [paper/main.tex](../paper/main.tex).
+
+---
+
 # Epistemic Type Systems: Unifying Deterministic and Stochastic Execution in a Single Grammar
 
-**Randerson Rebouças**
+**Randerson Oliveira Melville Rebouças**
 Programa de Pós-Graduação em Informática na Educação, UFRGS
-randerson@inf.ufrgs.br
+randerson.melville@ufrgs.br
 
-**Preprint — submitted to arXiv cs.PL / cs.AI**
-*March 2026*
+*Internal working draft, March 2026. Unpublished and superseded.*
 
 ---
 

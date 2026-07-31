@@ -18,8 +18,10 @@
 
 > **Research status:** v0.3 — active development, structural validation phase.
 >
-> Authors: [Randerson Rebouças](https://github.com/RandMelville) (PhD candidate, UFRGS), Dante Barone, and Eliseo Reátegui — PPGIE/UFRGS.
+> Authors: [Randerson Rebouças](https://github.com/RandMelville) (PhD candidate, UFRGS), Dante Barone, and Eliseo Reátegui, PPGIE/UFRGS.
 > The short paper **"Epi: An Epistemic Type System for Containing LLM Hallucination in Generated Code"** was **accepted at SBLP 2026**, the 30th Brazilian Symposium on Programming Languages, part of [CBSoft 2026](https://cbsoft.sbc.org.br/2026/).
+>
+> **Accepted paper:** [paper/Epi-SBLP2026-camera-ready.pdf](paper/Epi-SBLP2026-camera-ready.pdf) (camera-ready). This repository is the artifact for that paper; the archived snapshot is at [doi.org/10.5281/zenodo.21433256](https://doi.org/10.5281/zenodo.21433256).
 
 ## What Epi is
 
@@ -130,35 +132,87 @@ A three-layer transpiler. The LLM is formally excluded from Layers 1 and 2.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full breakdown.
 
-## Quick start
+## Requirements
 
-The PyPI package installs the CLI; example `.epi` files currently live in this repo. A `pip-only` workflow lands in v0.4 with `epi init`.
+To run the transpiler:
+
+| | Version | Notes |
+|---|---|---|
+| Python | >= 3.11 | the Epi CLI and transpiler |
+| pip | any recent | `pip install epi-lang` |
+
+To build and run a project the transpiler generates:
+
+| | Version | Notes |
+|---|---|---|
+| Node.js + npm | >= 20 | the emitted project is Next.js |
+| PostgreSQL | >= 14 | or any `DATABASE_URL` Prisma accepts |
+| An LLM provider | | either an Anthropic API key, or [Ollama](https://ollama.com) running locally. Neither is needed to validate or transpile, only to execute the generated AI calls. |
+
+To reproduce the containment evaluation of the paper (`eval/`):
+
+| | Notes |
+|---|---|
+| Ollama | serving `qwen2.5:3b-instruct` and `llama3.2:1b`, about 3.5 GB on disk together |
+| RAM | 16 GB is what the reported numbers were measured on |
+
+Developed and measured on macOS 15 (Apple Silicon, 16 GB RAM). Nothing in the
+toolchain is platform-specific, but no other platform has been exercised.
+
+## Installation
+
+```bash
+pip install epi-lang
+```
+
+Or from source, which is also what you need for the example programs and the
+evaluation harness:
 
 ```bash
 git clone https://github.com/RandMelville/epi-lang.git
 cd epi-lang
-pip install epi-lang
+pip install -e ".[dev]"
+```
 
-# Validate
-epi validate examples/contrato.epi
+### Check that it works
 
-# Transpile to a Next.js project
-epi transpile examples/contrato.epi --target nextjs --outdir ./generated
+The fastest end-to-end check needs no database, no API key and no Node:
 
+```bash
+epi validate examples/avaliacao-simples.epi
+epi transpile examples/avaliacao-simples.epi --outdir ./generated
+ls generated
+```
+
+That parses the program of Section 5 of the paper and writes the generated
+project (13 files, 477 lines) to `./generated`. The full test suite:
+
+```bash
+pytest
+```
+
+### Run a generated project
+
+```bash
 cd generated
 npm install
 cp .env.example .env
-# Edit .env: DATABASE_URL=postgresql://...  and  ANTHROPIC_API_KEY=sk-ant-...
+# Set DATABASE_URL, then pick a provider:
+#   EPI_AI_PROVIDER=anthropic + ANTHROPIC_API_KEY=sk-ant-...
+#   EPI_AI_PROVIDER=ollama    (requires `ollama serve`)
 npx prisma migrate dev --name init
 npm run dev
 ```
 
-For development:
+### Reproduce the paper's evaluation
 
 ```bash
-pip install -e ".[dev]"
-pytest
+cd eval
+./setup.sh
 ```
+
+See [eval/README.md](eval/README.md) for the harness, the 40-item dataset with
+gold labels, and the raw per-call results behind Table 2.
 
 ## The five primitives
 
@@ -225,7 +279,9 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
 | [docs/MANIFESTO.md](docs/MANIFESTO.md) | Why epistemic types matter |
 | [docs/LIMITATIONS.md](docs/LIMITATIONS.md) | What Epi does NOT do (honest list of gaps) |
 | [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) | How to contribute |
-| [docs/PAPER.md](docs/PAPER.md) | Paper draft (accepted at SBLP 2026) |
+| [paper/Epi-SBLP2026-camera-ready.pdf](paper/Epi-SBLP2026-camera-ready.pdf) | **The accepted SBLP 2026 paper** (camera-ready) |
+| [paper/main.tex](paper/main.tex) | LaTeX source of the accepted paper |
+| [docs/PAPER.md](docs/PAPER.md) | Early internal draft, unpublished and superseded by the paper above, not kept in sync |
 | [docs/translations/SPEC-PT.md](docs/translations/SPEC-PT.md) | Portuguese translation (may lag) |
 
 ## Status
@@ -235,7 +291,10 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
 - AST with epistemic type system (Pydantic)
 - Parser + Lark transformer
 - Deterministic generators: Prisma schema, middleware, routes, Zod validators
-- Epistemic generators: LLM calls (Anthropic), Trace + Checkpoint, Bayesian prior
+- Epistemic generators: LLM calls, Trace + Checkpoint, Bayesian prior
+- Provider-agnostic LLM client in the generated project: Anthropic, or any
+  OpenAI-compatible endpoint, with Ollama used for local open-weight models.
+  Selected by `EPI_AI_PROVIDER` at deployment, with no change to the `.epi` source.
 - CLI: `validate`, `parse`, `transpile`
 - 121 tests passing
 - PyPI package (`pip install epi-lang`)
@@ -245,7 +304,7 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
 - `--target fastapi` — blocked in the CLI; current output is inconsistent.
 
 **Planned for v0.4:**
-- Multi-provider LLM adapter (Ollama, OpenAI, Gemini, Anthropic) — currently Anthropic-only.
+- Gemini and a broader provider matrix on top of the existing adapter.
 - `epi init` for project bootstrap without cloning the repo.
 - FastAPI target completion (or formal removal).
 - Empirical evaluation study (Epi-generated vs hand-written equivalents).
