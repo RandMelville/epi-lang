@@ -104,6 +104,18 @@ We introduce \textbf{Epi}, a domain-specific language whose type system makes th
 \frenchspacing
 \maketitle
 
+%% Camera-ready item 16: the symposium name must appear on the first page.
+%% Item 3 blanks the ACM copyright footnote, which is where acmart would
+%% otherwise print it, so it is restored here as a first-page header.
+%% This must come after \maketitle, which is where acmart installs its own
+%% firstpagestyle; redefining it in the preamble has no effect.
+\fancypagestyle{firstpagestyle}{%
+  \fancyhf{}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \fancyhead[C]{\sffamily\footnotesize SBLP 2026, September 8--11, 2026, S\~{a}o Paulo, SP, Brazil}%
+}
+\thispagestyle{firstpagestyle}
+
 \section{Introduction}
 
 Large Language Models (LLMs) are increasingly embedded in production software, performing classification, extraction, summarization, and generation alongside conventional business logic. Yet the languages we use to build that software were designed for an era of deterministic computation: a function, given the same input, returns the same output. This assumption silently fails the moment an LLM enters the call graph, because an LLM may confidently return content that is fluent but unfaithful to its input, a failure mode surveyed under the umbrella term \emph{hallucination}~\cite{ji2023}.
