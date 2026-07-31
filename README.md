@@ -296,7 +296,7 @@ This generates an in-memory `TraceState` store, inspect / resume HTTP routes, an
   OpenAI-compatible endpoint, with Ollama used for local open-weight models.
   Selected by `EPI_AI_PROVIDER` at deployment, with no change to the `.epi` source.
 - CLI: `validate`, `parse`, `transpile`
-- 121 tests passing
+- 127 tests passing (`pytest`)
 - PyPI package (`pip install epi-lang`)
 
 **Experimental — known to be incomplete:**

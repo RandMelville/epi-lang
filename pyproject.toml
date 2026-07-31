@@ -1,6 +1,6 @@
 [project]
 name = "epi-lang"
-version = "0.3.2"
+version = "0.3.3"
 description = "Epi — Epistemic Programming Interface. A zero-stack intent-oriented language with an epistemic type system that formally separates deterministic and AI-inferred computation."
 readme = "README.md"
 license = { text = "Apache-2.0" }
