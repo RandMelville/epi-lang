@@ -62,7 +62,9 @@ The current `main.tex` incorporates Tier 1 + Tier 2 + Tier 3 fixes from
 4. Confirm the compiler is set to **pdfLaTeX** with **BibTeX**.
 5. Click **Recompile**.
 
-You should obtain a 4-page PDF.
+The current camera-ready compiles to 6 pages, of which 4.93 are body and
+the rest references. See the page budget section below before adding
+anything.
 
 ## Switching between visible and anonymous versions
 
@@ -96,11 +98,20 @@ You need TeX Live ≥ 2019 (which includes `acmart`).
 
 ## Page budget
 
-- The submitted version compiled to 6 pages, and the camera-ready may
-  use one more.
-- The body is now about 4,880 words plus two tables and four verbatim
-  blocks. Confirm the count on Overleaf before uploading; the cut list
-  is in the camera-ready section below.
+**The limit comes from the CfP, never from the previous version.** SBLP
+2026 short papers get **4 pages excluding references**, plus **one extra
+page for the camera-ready** to absorb reviewer changes, which the chairs
+confirmed by email. That is a ceiling of **5 body pages**; the reference
+pages do not count.
+
+This was got wrong once. An earlier round read "the submitted version is
+6 pages, the camera-ready may use one more" as a 7-page budget and never
+opened the CfP, so the camera-ready was closed on 2026-07-29 at 6.6 body
+pages, 1.6 over. It was cut back to 4.93 on 2026-07-30.
+
+Measure the body, not the PDF: compile, find where the `REFERENCES`
+heading starts, and count everything before it. `pdftotext -bbox` gives
+the position.
 
 ## Camera-ready (accepted, weak accept from 4 reviewers)
 
